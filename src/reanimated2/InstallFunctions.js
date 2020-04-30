@@ -1,10 +1,14 @@
 export function installFunctions(innerNativeModule) {
+
   function install(path, fun) {
     innerNativeModule.workletEval(path, `(${fun.asString})`);
   }
 
-  // install assign
-  install('Reanimated.assign', function(left, right) {
+  /**
+   * install assign
+   * updates every field in [left] object with values for [right] object(for those which exist in both)
+   */
+  install('Reanimated.assign', function (left, right) {
     'worklet';
     if (right == null) return;
     if (typeof right === 'object' && !right.value) {
@@ -28,107 +32,15 @@ export function installFunctions(innerNativeModule) {
     }
   });
 
-  install('Reanimated.withSpring', function(toValue, userConfig) {
-    'worklet';
-
-    const config = {
-      damping: 10,
-      mass: 1,
-      stiffness: 100,
-      overshootClamping: 0,
-      restDisplacementThreshold: 0.001,
-      restSpeedThreshold: 0.001,
-      ...userConfig,
-    };
-
-    function spring(animation) {
-      const { time, current, velocity } = animation;
-
-      const now = Date.now();
-      const deltaTime = Math.min(now - time, 64);
-      animation.time = now;
-
-      const c = config.damping;
-      const m = config.mass;
-      const k = config.stiffness;
-
-      const v0 = -velocity;
-      const x0 = toValue - current;
-
-      const zeta = c / (2 * Math.sqrt(k * m)); // damping ratio
-      const omega0 = Math.sqrt(k / m); // undamped angular frequency of the oscillator (rad/ms)
-      const omega1 = omega0 * Math.sqrt(1 - zeta ** 2); // exponential decay
-
-      const t = deltaTime / 1000;
-
-      const sin1 = Math.sin(omega1 * t);
-      const cos1 = Math.cos(omega1 * t);
-
-      // under damped
-      const underDampedEnvelope = Math.exp(-zeta * omega0 * t);
-      const underDampedFrag1 =
-        underDampedEnvelope *
-        (sin1 * ((v0 + zeta * omega0 * x0) / omega1) + x0 * cos1);
-
-      const underDampedPosition = toValue - underDampedFrag1;
-      // This looks crazy -- it's actually just the derivative of the oscillation function
-      const underDampedVelocity =
-        zeta * omega0 * underDampedFrag1 -
-        underDampedEnvelope *
-          (cos1 * (v0 + zeta * omega0 * x0) - omega1 * x0 * sin1);
-
-      // critically damped
-      const criticallyDampedEnvelope = Math.exp(-omega0 * t);
-      const criticallyDampedPosition =
-        toValue - criticallyDampedEnvelope * (x0 + (v0 + omega0 * x0) * t);
-
-      const criticallyDampedVelocity =
-        criticallyDampedEnvelope *
-        (v0 * (t * omega0 - 1) + t * x0 * omega0 * omega0);
-
-      const isOvershooting = () => {
-        if (config.overshootClamping && config.stiffness != 0) {
-          return current < toValue ? current > toValue : current < toValue;
-        } else {
-          return false;
-        }
-      };
-
-      const isVelocity = Math.abs(velocity) < config.restSpeedThreshold;
-      const isDisplacement =
-        config.stiffness == 0 ||
-        Math.abs(toValue - current) < config.restDisplacementThreshold;
-
-      if (zeta < 1) {
-        animation.current = underDampedPosition;
-        animation.velocity = underDampedVelocity;
-      } else {
-        animation.current = criticallyDampedPosition;
-        animation.velocity = criticallyDampedVelocity;
-      }
-
-      if (isOvershooting() || (isVelocity && isDisplacement)) {
-        if (config.stiffness != 0) {
-          animation.velocity = 0;
-          animation.current = toValue;
-        }
-        return true;
-      }
-    }
-
-    return {
-      animation: spring,
-      velocity: 0,
-      time: Date.now(),
-      current: toValue,
-    };
-  });
-  global.Reanimated.withSpring = (toValue, config = undefined) => {
-    return toValue;
-  };
-
-  // install withWorklet
-  install('Reanimated.withWorklet', function(worklet, params, initial) {
+  /**
+  * install withWorklet
+  * connects shared double(sd) with worklet
+  * passed worklet keeps changing [sd] value until it is finished or [sd].set is called
+  * IMPORTANT: first worklet parameter must be a binded [sd]
+  * IMPORTANT: when setting binded [sd] inside provided worklet use forceSet instead of set
+  * IMPORTANT: first argument to the worklet passed as an argument here is provided automatically(and that's [sd])
+  */
+  install('Reanimated.withWorklet', function (worklet, params, initial) {
     'worklet';
     params = [0].concat(params);
     return {
@@ -136,12 +48,12 @@ export function installFunctions(innerNativeModule) {
     };
   });
 
-  global.Reanimated.withWorklet = (worklet, params, initial) => {
-    return initial ? initial : 0;
-  };
+  global.Reanimated.withWorklet = (worklet, params, initial) => {	
+    return (initial)? initial : 0;	
+  } 
 
   // install withWorkletCopy
-  install('Reanimated.withWorkletCopy', function(worklet, params, initial) {
+  install('Reanimated.withWorkletCopy', function (worklet, params, initial) {
     'worklet';
     params = [0].concat(params);
     return {
@@ -149,12 +61,12 @@ export function installFunctions(innerNativeModule) {
     };
   });
 
-  global.Reanimated.withWorkletCopy = (worklet, params, initial) => {
-    return initial ? initial : 0;
-  };
+  global.Reanimated.withWorkletCopy = (worklet, params, initial) => {	
+    return (initial)? initial : 0;	
+  }
 
   // install memory
-  install('Reanimated.memory', function(context) {
+  install('Reanimated.memory', function (context) {
     'worklet';
     const applierId = context.applierId;
     if (!Reanimated.container[applierId]) {
@@ -163,72 +75,79 @@ export function installFunctions(innerNativeModule) {
     return Reanimated.container[applierId];
   });
 
-  install('console.log', function(data) {
-    'worklet';
+  install('console.log', function (data) {
+    'worklet'
 
     function stringRepresentation(obj) {
       if (Array.isArray(obj)) {
-        let result = '[';
-        for (let item of obj) {
-          const next = item.__baseType === true ? item.value : item;
-          result += stringRepresentation(next);
-          result += ',';
-        }
-        result = result.substr(0, result.length - 1) + ']';
-        return result;
-      } else if (typeof obj === 'object' && obj.__baseType === undefined) {
-        let result = '{';
-        for (let key of Object.keys(obj)) {
-          if (key === 'id') {
-            continue;
+        let result = '[]'
+        if (obj.length > 0) {
+          result = '[';
+          for (let item of obj) {
+            const next = item.__baseType === true ? item.value : item
+            result += stringRepresentation(next);
+            result += ','
           }
-          const next = obj[key].__baseType === true ? obj[key].value : obj[key];
-          result += key + ':' + stringRepresentation(next);
-          result += ',';
+          result = result.substr(0, result.length - 1) + ']'
         }
-        result = result.substr(0, result.length - 1) + '}';
-        return result;
+        return result
+      } else if (typeof obj === 'object' && obj.__baseType === undefined) {
+        const keys = Object.keys(obj)
+        let result = '{}';
+        if (keys.length > 0) {
+          result = '{'
+          for (let key of keys) {
+            if (key === 'id') {
+              continue;
+            }
+            const next = obj[key].__baseType === true ? obj[key].value : obj[key];
+            result += key + ':' + stringRepresentation(next);
+            result += ','
+          }
+          result = result.substr(0, result.length - 1) + '}'
+        }
+        return result
       }
       return obj.__baseType === true ? obj.value : obj;
     }
-    _log(stringRepresentation(data));
-  });
+    _log(stringRepresentation(data))
+  })
 
   // clamp
-  const clamp = function(x, values) {
+  const clamp = function (x, values) {
     'worklet';
-    const diffs = values.map(it => Math.abs(it - x));
-    const index = diffs.indexOf(Math.min(...diffs));
+    const diffs = values.map((it) => Math.abs(it - x));
+    const index = diffs.indexOf(Math.min.apply(Math, diffs));
     return values[index];
-  };
+  }
 
   global.Reanimated.clamp = clamp;
   install('Reanimated.clamp', clamp);
 
   // interpolate
-  const internalInterpolate = function(x, l, r, ll, rr, type) {
+  const internalInterpolate = function (x, l, r, ll, rr, type) {
     'worklet';
-    if (r - l === 0) return ll;
-    const progress = (x - l) / (r - l);
-    const val = ll + progress * (rr - ll);
-    const coef = rr >= ll ? 1 : -1;
+    if ((r-l) === 0) return ll;
+    const progress = (x-l)/(r-l);
+    const val = ll + progress * (rr-ll);
+    const coef = (rr >= ll)? 1 : -1;
 
     if (coef * val < coef * ll || coef * val > coef * rr) {
       switch (type) {
         case Extrapolate.IDENTITY:
           return x;
-        case Extrapolate.CLAMP:
-          if (coef * val < coef * ll) {
+        case Extrapolate.CLAMP: 
+          if(coef * val < coef * ll) {
             return ll;
           }
           return rr;
-        case Extrapolate.EXTEND:
-        default:
+        case Extrapolate.EXTEND:  
+        default: 
           return val;
       }
-    }
+    } 
     return val;
-  };
+  }
   global.Reanimated.internalInterpolate = internalInterpolate;
   install('Reanimated.internalInterpolate', internalInterpolate);
 
@@ -238,13 +157,10 @@ export function installFunctions(innerNativeModule) {
     let narrowedInput = [];
     if (x < input[0]) {
       narrowedInput = [input[0], input[1], output[0], output[1]];
+
     } else if (x > input[length - 1]) {
-      narrowedInput = [
-        input[length - 2],
-        input[length - 1],
-        output[length - 2],
-        output[length - 1],
-      ];
+      narrowedInput = [input[length - 2], input[length - 1], output[length - 2], output[length - 1]];
+
     } else {
       for (let i = 1; i < length; ++i) {
         if (x <= input[i]) {
@@ -253,18 +169,20 @@ export function installFunctions(innerNativeModule) {
         }
       }
     }
-    return Reanimated.internalInterpolate(x, ...narrowedInput, type);
-  };
-
+    return Reanimated.internalInterpolate.apply(Reanimated, [x].concat(narrowedInput).concat(type))
+  }
+  
   global.Reanimated.interpolate = interpolate;
   install('Reanimated.interpolate', interpolate);
 }
 
 export function installConstants(innerNativeModule) {
   const install = (path, obj) => {
-    eval('global.' + path + '=' + obj);
+    // in hermes global is binded to this in eval
+    const globalAlias = (Platform.OS === 'android') ? 'this' : 'global';
+    eval(globalAlias + '.' + path + '=' + obj);
     innerNativeModule.workletEval(path, obj);
-  };
+  }
 
   // event worklet constants
   install('Reanimated', '{}');
