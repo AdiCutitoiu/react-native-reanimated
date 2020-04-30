@@ -441,4 +441,40 @@
   }
 }
 
+- (void)updateProps:(nonnull NSDictionary *)props
+      ofViewWithTag:(nonnull NSNumber *)viewTag
+           viewName:(nonnull NSString *)viewName
+{
+  // TODO: refactor PropsNode to also use this function
+  NSMutableDictionary *uiProps = [NSMutableDictionary new];
+  NSMutableDictionary *nativeProps = [NSMutableDictionary new];
+  NSMutableDictionary *jsProps = [NSMutableDictionary new];
+
+  void (^addBlock)(NSString *key, id obj, BOOL * stop) = ^(NSString *key, id obj, BOOL * stop){
+    if ([self.uiProps containsObject:key]) {
+      uiProps[key] = obj;
+    } else if ([self.nativeProps containsObject:key]) {
+      nativeProps[key] = obj;
+    } else {
+      jsProps[key] = obj;
+    }
+  };
+
+  [props enumerateKeysAndObjectsUsingBlock:addBlock];
+
+  if (uiProps.count > 0) {
+    [self.uiManager
+     synchronouslyUpdateViewOnUIThread:viewTag
+     viewName:viewName
+     props:uiProps];
+    }
+    if (nativeProps.count > 0) {
+      [self enqueueUpdateViewOnNativeThread:viewTag viewName:viewName nativeProps:nativeProps];
+    }
+    if (jsProps.count > 0) {
+      [self.reanimatedModule sendEventWithName:@"onReanimatedPropsChange"
+                                          body:@{@"viewTag": viewTag, @"props": jsProps }];
+    }
+}
+
 @end

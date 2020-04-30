@@ -8,7 +8,6 @@ typedef void (^AnimatedOperation)(REANodesManager *nodesManager);
 
 @implementation REAModule
 {
-  REANodesManager *_nodesManager;
   NSMutableArray<AnimatedOperation> *_operations;
   REATransitionManager *_transitionManager;
 }

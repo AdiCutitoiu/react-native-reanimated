@@ -70,6 +70,10 @@ typedef void (^REANativeAnimationOp)(RCTUIManager *uiManager);
 - (void)configureProps:(nonnull NSSet<NSString *> *)nativeProps
                uiProps:(nonnull NSSet<NSString *> *)uiProps;
 
+- (void)updateProps:(nonnull NSDictionary *)props
+      ofViewWithTag:(nonnull NSNumber *)viewTag
+           viewName:(nonnull NSString *)viewName;
+
 // events
 
 - (void)dispatchEvent:(id<RCTEvent>)event;

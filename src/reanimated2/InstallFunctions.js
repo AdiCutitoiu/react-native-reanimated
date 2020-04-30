@@ -28,7 +28,7 @@ export function installFunctions(innerNativeModule) {
     }
   });
 
-  install('Reanimated.withSpring', function(toValue, from = 0) {
+  install('Reanimated.withSpring', function(toValue, userConfig) {
     'worklet';
 
     const config = {
@@ -38,6 +38,7 @@ export function installFunctions(innerNativeModule) {
       overshootClamping: 0,
       restDisplacementThreshold: 0.001,
       restSpeedThreshold: 0.001,
+      ...userConfig,
     };
 
     function spring(animation) {
@@ -111,7 +112,6 @@ export function installFunctions(innerNativeModule) {
           animation.velocity = 0;
           animation.current = toValue;
         }
-        animation.finished = true;
         return true;
       }
     }
@@ -120,12 +120,11 @@ export function installFunctions(innerNativeModule) {
       animation: spring,
       velocity: 0,
       time: Date.now(),
-      current: from,
-      finished: false,
+      current: toValue,
     };
   });
-  global.Reanimated.withSpring = (toValue, from = 0) => {
-    return from;
+  global.Reanimated.withSpring = (toValue, config = undefined) => {
+    return toValue;
   };
 
   // install withWorklet

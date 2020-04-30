@@ -10,26 +10,25 @@ import { View, Button } from 'react-native';
 import React, { useState, useRef } from 'react';
 
 export default function RotatingSquare(props) {
-  const wat = useSharedValue(0);
+  const randomOpacity = useSharedValue(1);
+  const randomTranslate = useSharedValue(100);
 
   const style = useAnimatedStyle(
-    function(input) {
+    input => {
       'worklet';
-      const { wat } = input;
-
-      return {
-        opacity: Reanimated.withSpring(wat.value, 0),
-      };
+      const { randomOpacity, randomTranslate } = input;
 
       return {
         transform: [
           {
-            translateX: wat.value,
+            translateX: Reanimated.withSpring(randomTranslate),
           },
         ],
+        width: Reanimated.withSpring(Math.round(randomOpacity * 120)),
+        // opacity: Reanimated.withSpring(randomOpacity),
       };
     },
-    { wat }
+    { randomOpacity, randomTranslate }
   );
 
   return (
@@ -46,7 +45,13 @@ export default function RotatingSquare(props) {
           style,
         ]}
       />
-      <Button title="toggle" onPress={() => wat.set(Math.random())} />
+      <Button
+        title="toggle"
+        onPress={() => {
+          randomTranslate.set(Math.random() * 200);
+          randomOpacity.set(Math.random());
+        }}
+      />
     </View>
   );
 }

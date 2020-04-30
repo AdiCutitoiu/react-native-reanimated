@@ -13,6 +13,8 @@
 #import "IOSErrorHandler.h"
 #import <jsi/JSCRuntime.h>
 #import "RuntimeDecorator.h"
+#import "REAModule.h"
+#import "REANodesManager.h"
 
 // COPIED FROM RCTTurboModule.mm
 static id convertJSIValueToObjCObject(jsi::Runtime &runtime, const jsi::Value &value);
@@ -161,10 +163,11 @@ std::shared_ptr<IOSScheduler> scheduler;
   if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(bridge)]) {
     bridge = [[UIApplication sharedApplication].delegate performSelector:@selector(bridge) withObject:[UIApplication sharedApplication].delegate];
   }
+  REAModule *reanimatedModule = [bridge moduleForClass:[REAModule class]];
 
-  auto updater = [bridge](jsi::Runtime &rt, int viewTag, const jsi::Object &props) -> void {
+  auto updater = [reanimatedModule](jsi::Runtime &rt, int viewTag, const jsi::Object &props) -> void {
     NSDictionary *propsDict = convertJSIObjectToNSDictionary(rt, props);
-    [bridge.uiManager synchronouslyUpdateViewOnUIThread:[NSNumber numberWithInt:viewTag] viewName:@"RCTView" props:propsDict];
+    [reanimatedModule.nodesManager updateProps:propsDict ofViewWithTag:[NSNumber numberWithInt:viewTag] viewName:@"RCTView"];
   };
   RuntimeDecorator::addNativeObjects(*animatedRuntime, updater);
 

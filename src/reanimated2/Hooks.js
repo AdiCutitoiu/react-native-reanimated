@@ -227,18 +227,6 @@ export function useSharedValue(initial) {
   return sv.current;
 }
 
-const styleUpdater2 = new Worklet(function(input, output) {
-  'worklet';
-  const newValues = input.body.apply(this, [input.input]);
-  Reanimated.assign(output, newValues);
-});
-
-const styleUpdater3 = new Worklet(function(input, output, accessories) {
-  'worklet';
-  const newValues = input.body.apply(this, [input.input, accessories]);
-  Reanimated.assign(output, newValues);
-});
-
 function unwrap(obj) {
   if (Array.isArray(obj)) {
     const res = [];
@@ -248,78 +236,48 @@ function unwrap(obj) {
     return res;
   }
 
-  const initialValue = obj.initialValue;
-
-  if (typeof initialValue === 'object') {
-    if (initialValue.isWorklet) {
-      return { start: () => {}, stop: () => {} };
-    }
-
-    if (initialValue.isFunction) {
-      return obj._data;
-    }
-
-    if (initialValue.isObject) {
-      const res = {};
-      for (let propName of initialValue.propNames) {
-        res[propName] = unwrap(obj[propName]);
+  // I don't understand why I need to do this but some objects have value prop and other
+  // don't.
+  const value = obj.initialValue === undefined ? obj : obj.initialValue;
+  if (typeof value === 'object') {
+    const res = {};
+    Object.keys(value).forEach(propName => {
+      if (propName !== 'id') {
+        res[propName] = unwrap(value[propName]);
       }
-      return res;
-    }
+    });
+    return res;
   }
 
-  return { value: initialValue };
+  return value;
 }
 
-function copyAndUnwrap(obj) {
+function sanitize(obj) {
   if (Array.isArray(obj)) {
     const res = [];
     for (let ele of obj) {
-      res.push(copyAndUnwrap(ele));
+      res.push(sanitize(ele));
     }
     return res;
   }
 
-  if (!obj.initialValue) {
-    if (Object.keys(obj).length == 1 && obj.value) {
-      return obj.value;
+  const value =
+    obj === null || obj === undefined || obj.value === undefined
+      ? obj
+      : obj.value;
+  if (typeof value === 'object' && value !== null) {
+    if (value.animation) {
+      return sanitize(value.toValue);
     }
-    if (typeof obj === 'object') {
-      for (let propName of Object.keys(obj)) {
-        obj[propName] = copyAndUnwrap(obj[propName]);
-      }
-    }
-    return obj;
-  }
-
-  if (obj.initialValue.isObject) {
     const res = {};
-    for (let propName of initialValue.propNames) {
-      res[propName] = copyAndUnwrap(obj[propName]);
-    }
+    Object.keys(value).forEach(key => {
+      if (key !== 'id') {
+        res[key] = sanitize(value[key]);
+      }
+    });
     return res;
   }
-
-  // it has to be base shared type
-  return obj.initialValue;
-}
-
-function sanitize(style) {
-  const sanitized = {};
-  Object.keys(style).forEach(key => {
-    const value = style[key];
-    if (typeof value === 'object') {
-      if (value.value !== undefined) {
-        sanitized[key] = value.value;
-        return;
-      } else if (value.animation) {
-        // do nothing
-        return;
-      }
-    }
-    sanitized[key] = value;
-  });
-  return sanitized;
+  return value;
 }
 
 export function ReanimatedView(props) {
@@ -329,7 +287,7 @@ export function ReanimatedView(props) {
   const processedStyle = props.style.map(style => {
     if (style.viewTag) {
       // animated
-      return style.eval();
+      return style.initial;
     } else {
       return style;
     }
@@ -348,24 +306,46 @@ export function ReanimatedView(props) {
 
 const animationUpdater7 = new Worklet(function(viewTag, styleApplierId) {
   'worklet';
-  const animations = Reanimated.container[styleApplierId.value].animations;
-  const updates = {};
-  let allFinished = true;
-  let haveUpdates = false;
-  Object.keys(animations).forEach(propKey => {
-    const animation = animations[propKey];
-    if (!animation.finished) {
+  const styleUpdaterMemory = Reanimated.container[styleApplierId.value];
+  const { animations, last } = styleUpdaterMemory;
+
+  function runAnimations(animation, key, result) {
+    if (Array.isArray(animation)) {
+      result[key] = [];
+      return animation.every((entry, index) =>
+        runAnimations(entry, index, result[key])
+      );
+    } else if (typeof animation === 'object' && animation.animation) {
       const finished = animation.animation(animation);
-      updates[propKey] = animation.current;
-      haveUpdates = true;
-      if (!finished) {
-        allFinished = false;
-      } else {
+      if (finished) {
         animation.finished = true;
       }
+      result[key] = animation.current;
+      return finished;
+    } else if (typeof animation === 'object') {
+      result[key] = {};
+      return Object.keys(animation).every(k =>
+        runAnimations(animation[k], k, result[key])
+      );
+    } else {
+      result[key] = animation;
+      return true;
+    }
+  }
+
+  const updates = {};
+  let allFinished = true;
+  Object.keys(animations).forEach(propName => {
+    const finished = runAnimations(animations[propName], propName, updates);
+    if (finished) {
+      last[propName] = updates[propName];
+      delete animations[propName];
+    } else {
+      allFinished = false;
     }
   });
-  if (haveUpdates) {
+
+  if (Object.keys(updates).length) {
     _updateProps(viewTag.value, updates);
   }
   return allFinished;
@@ -375,8 +355,48 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
   'worklet';
   const memory = Reanimated.memory(this);
   const animations = memory.animations || {};
-  const oldValues = memory.last || {};
-  const newValues = input.body(input.input);
+
+  // would be great if we could avoid this
+  function unwrap(obj) {
+    if (Array.isArray(obj)) {
+      const res = [];
+      for (let ele of obj) {
+        res.push(unwrap(ele));
+      }
+      return res;
+    }
+
+    // I don't understand why I need to do this but some objects have value and others
+    // don't.
+    const value = obj.value === undefined ? obj : obj.value;
+    if (typeof value === 'object') {
+      const res = {};
+      Object.keys(value).forEach(propName => {
+        if (propName !== 'id') {
+          res[propName] = unwrap(value[propName]);
+        }
+      });
+      return res;
+    }
+
+    return value;
+  }
+
+  const newValues = input.body(unwrap(input.input));
+  let oldValues = memory.last || unwrap(input.initial);
+
+  function isAnimated(prop) {
+    if (typeof prop === 'object') {
+      if (prop.animation) {
+        return true;
+      }
+      return Object.keys(prop).some(key => isAnimated(prop[key]));
+    }
+    if (Array.isArray(prop)) {
+      return prop.some(isAnimated);
+    }
+    return false;
+  }
 
   function styleDiff(oldStyle, newStyle) {
     const diff = {};
@@ -389,21 +409,15 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
       const value = newStyle[key];
       const oldValue = oldStyle[key];
 
-      if (typeof value === 'object') {
-        if (value.value !== undefined) {
-          // shared value
-          if (oldValue !== value.value) {
-            diff[key] = value.value;
-          }
-          return;
-        } else if (value.animation) {
-          // animation
-          return;
-        }
-        diff[key] = value;
+      if (isAnimated(value)) {
+        // do nothing
         return;
       }
-      if (oldValue !== value) {
+      if (
+        oldValue !== value &&
+        JSON.stringify(oldValue) !== JSON.stringify(value)
+      ) {
+        // I'd use deep equal here but that'd take additional work and this was easier
         diff[key] = value;
         return;
       }
@@ -411,40 +425,59 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
     return diff;
   }
 
-  function getLastValue(key) {
-    const value = oldValues[key];
-    if (value === undefined) {
-      return undefined;
+  function prepareAnimation(animatedProp, lastAnimation, lastValue) {
+    if (Array.isArray(animatedProp)) {
+      animatedProp.forEach((prop, index) =>
+        prepareAnimation(
+          prop,
+          lastAnimation && lastAnimation[index],
+          lastValue && lastValue[index]
+        )
+      );
+      return animatedProp;
     }
-    if (typeof value === 'object') {
-      if (value.value !== undefined) {
-        return value.value;
+    if (typeof animatedProp === 'object' && animatedProp.animation) {
+      animatedProp.finished = false;
+      animatedProp.velocity = 0;
+      if (lastValue !== undefined) {
+        if (typeof lastValue === 'object') {
+          if (lastValue.value !== undefined) {
+            // previously it was a shared value
+            animatedProp.current = lastValue.value;
+          } else if (lastValue.animation !== undefined) {
+            // it was an animation before, copy its state
+            animatedProp.current = lastAnimation.current;
+            animatedProp.velocity = lastAnimation.velocity;
+          }
+        } else {
+          // previously it was a plan value, just set it as starting point
+          animatedProp.current = lastValue;
+        }
       }
-      if (value.animation !== undefined) {
-        return animations[key].current;
-      }
+    } else if (typeof animatedProp === 'object') {
+      // it is a object
+      Object.keys(animatedProp).forEach(key =>
+        prepareAnimation(
+          animatedProp[key],
+          lastAnimation && lastAnimation[key],
+          lastValue && lastValue[key]
+        )
+      );
     }
-    return value;
   }
 
   // extract animated props
   let hasAnimations = false;
   Object.keys(animations).forEach(key => {
     const value = newValues[key];
-    if (typeof value === 'object' && value.animation) {
-      value;
-      // animation will be updated in the next step, we are here just
-      // to cancel removed animations
-    } else {
+    if (!isAnimated(value)) {
       delete animations[key];
     }
   });
   Object.keys(newValues).forEach(key => {
     const value = newValues[key];
-    if (typeof value === 'object' && value.animation) {
-      // console.log('VVV ' + JSON.stringify(value));
-      value.current = getLastValue(key) || value.current;
-      value.velocity = animations[key] ? animations[key].velocity : 0;
+    if (isAnimated(value)) {
+      prepareAnimation(value, animations[key], oldValues[key]);
       animations[key] = value;
       hasAnimations = true;
     }
@@ -464,6 +497,7 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
   memory.last = Object.assign({}, oldValues, newValues);
 
   if (Object.keys(diff).length !== 0) {
+    console.log('UP ' + JSON.stringify(diff));
     _updateProps(input.viewTag.value, diff);
   }
 });
@@ -472,16 +506,21 @@ export function useAnimatedStyle(body, input) {
   const viewTag = useSharedValue(-1);
   const sharedBody = useSharedValue(body);
   const sharedInput = useSharedValue(input);
-  const mockInput = unwrap(sharedInput, true);
   const wtf = useSharedValue(-1);
   const animation = useWorklet(animationUpdater7, [viewTag, wtf]);
+
+  console.log('DDDD', unwrap(input));
+  const initial = sanitize(body(unwrap(input)));
+
+  const sharedInitial = useSharedValue(initial);
 
   const mapper = useMapper(styleUpdater7, [
     {
       input: sharedInput,
-      viewTag,
+      initial: sharedInitial,
       body: sharedBody,
       animation,
+      viewTag,
     },
     wtf,
   ]);
@@ -493,7 +532,7 @@ export function useAnimatedStyle(body, input) {
   return {
     viewTag,
     mapper,
-    eval: () => sanitize(body(mockInput)),
+    initial,
   };
 }
 
