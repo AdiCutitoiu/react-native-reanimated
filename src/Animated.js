@@ -71,7 +71,6 @@ import SharedValue from './reanimated2/SharedValue';
 import WorkletEventHandler from './reanimated2/WorkletEventHandler';
 
 import {
-  ReanimatedView,
   useWorklet,
   useEventWorklet,
   useSharedValue,
@@ -97,7 +96,6 @@ export {
   springWrapper as spring,
   SpringUtils,
   // Reanimated 2.0
-  ReanimatedView,
   Worklet,
   SharedValue,
   WorkletEventHandler,

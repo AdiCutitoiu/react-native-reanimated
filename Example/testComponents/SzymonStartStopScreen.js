@@ -4,19 +4,18 @@ import Animated, {
   useEventWorklet,
   Worklet,
   useAnimatedStyle,
-  ReanimatedView,
 } from 'react-native-reanimated';
 import { View, Button } from 'react-native';
 import React, { useState, useRef } from 'react';
 
 export default function RotatingSquare(props) {
-  const randomOpacity = useSharedValue(1);
+  const randomWidth = useSharedValue(1);
   const randomTranslate = useSharedValue(100);
 
   const style = useAnimatedStyle(
     input => {
       'worklet';
-      const { randomOpacity, randomTranslate } = input;
+      const { randomWidth, randomTranslate } = input;
 
       return {
         transform: [
@@ -24,11 +23,11 @@ export default function RotatingSquare(props) {
             translateX: Reanimated.withSpring(randomTranslate),
           },
         ],
-        width: Reanimated.withSpring(Math.round(randomOpacity * 120)),
+        width: Reanimated.withSpring(Math.round(randomWidth * 120)),
         // opacity: Reanimated.withSpring(randomOpacity),
       };
     },
-    { randomOpacity, randomTranslate }
+    { randomWidth, randomTranslate }
   );
 
   return (
@@ -39,9 +38,9 @@ export default function RotatingSquare(props) {
         borderWidth: 2,
         flexDirection: 'column',
       }}>
-      <ReanimatedView
+      <Animated.View
         style={[
-          { width: 80, height: 80, backgroundColor: 'black', margin: 30 },
+          { width: 1, height: 80, backgroundColor: 'black', margin: 30 },
           style,
         ]}
       />
@@ -49,7 +48,7 @@ export default function RotatingSquare(props) {
         title="toggle"
         onPress={() => {
           randomTranslate.set(Math.random() * 200);
-          randomOpacity.set(Math.random());
+          randomWidth.set(Math.random());
         }}
       />
     </View>

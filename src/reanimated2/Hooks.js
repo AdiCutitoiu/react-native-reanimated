@@ -280,30 +280,6 @@ function sanitize(obj) {
   return value;
 }
 
-export function ReanimatedView(props) {
-  const animatedStyle = props.style.filter(
-    style => style.viewTag !== undefined
-  );
-  const processedStyle = props.style.map(style => {
-    if (style.viewTag) {
-      // animated
-      return style.initial;
-    } else {
-      return style;
-    }
-  });
-
-  const ref = useRef(null);
-  useEffect(() => {
-    const viewTag = findNodeHandle(ref.current);
-    animatedStyle.forEach(style => {
-      style.viewTag.set(viewTag);
-    });
-  }, [ref]);
-
-  return <View {...props} style={processedStyle} ref={ref} />;
-}
-
 const animationUpdater7 = new Worklet(function(viewTag, styleApplierId) {
   'worklet';
   const styleUpdaterMemory = Reanimated.container[styleApplierId.value];
