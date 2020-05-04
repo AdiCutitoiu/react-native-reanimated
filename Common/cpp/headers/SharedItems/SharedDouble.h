@@ -14,6 +14,7 @@ class SharedDouble : public SharedValue {
   std::weak_ptr<SharedValueRegistry> sharedValueRegistry;
   std::weak_ptr<WorkletRegistry> workletRegistry;
   jsi::Value parameter;
+  jsi::Value animation;
   public:
     double value;
     int id;

@@ -31,6 +31,92 @@ export function installFunctions(innerNativeModule) {
     }
   });
 
+  install('Reanimated.zet', function(value) {
+    'worklet';
+    const previousAnimation = this._animation;
+    if (previousAnimation) {
+      // TODO: stop prev animation
+      previousAnimation;
+    }
+    if (typeof value === 'object' && value !== null && value.animation) {
+      // animated set
+      const animation = value;
+      const that = this;
+      function step() {
+        const finished = value.animation(animation);
+        that._value = animation.current;
+        if (!finished) {
+          _requestAnimationFrame(step);
+        }
+      }
+
+      if (previousAnimation) {
+        animation.current = previousAnimation.current;
+        animation.velocity = previousAnimation.velocity;
+      } else {
+        animation.current = that.value;
+        animation.velocity = 0;
+      }
+
+      _requestAnimationFrame(step);
+    } else {
+      this._value = value;
+    }
+  });
+
+  install('Reanimated.withTiming', function(toValue, userConfig) {
+    'worklet';
+
+    function inOut(easing) {
+      return t => {
+        if (t < 0.5) {
+          return easing(t * 2) / 2;
+        }
+        return 1 - easing((1 - t) * 2) / 2;
+      };
+    }
+
+    function quad(t) {
+      return t * t;
+    }
+
+    const config = {
+      duration: 300,
+      easing: inOut(quad),
+      ...userConfig,
+    };
+
+    function timing(animation) {
+      const { progress, startTime, current } = animation;
+
+      const now = Date.now();
+      const runtime = now - startTime;
+
+      if (runtime >= config.duration) {
+        animation.current = toValue;
+        return true;
+      }
+
+      const newProgress = config.easing(runtime / config.duration);
+
+      const dist =
+        ((toValue - current) * (newProgress - progress)) / (1 - progress);
+      animation.current += dist;
+      animation.progress = newProgress;
+      return false;
+    }
+    return {
+      animation: timing,
+      velocity: 0,
+      progress: 0,
+      startTime: Date.now(),
+      current: toValue,
+    };
+  });
+  global.Reanimated.withTiming = (toValue, config = undefined) => {
+    return toValue;
+  };
+
   install('Reanimated.withSpring', function(toValue, userConfig) {
     'worklet';
 

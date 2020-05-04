@@ -169,7 +169,7 @@ std::shared_ptr<IOSScheduler> scheduler;
     NSDictionary *propsDict = convertJSIObjectToNSDictionary(rt, props);
     [reanimatedModule.nodesManager updateProps:propsDict ofViewWithTag:[NSNumber numberWithInt:viewTag] viewName:@"RCTView"];
   };
-  RuntimeDecorator::addNativeObjects(*animatedRuntime, updater);
+  RuntimeDecorator::addNativeObjects(*animatedRuntime, applierRegistry, updater);
 
   nativeReanimatedModule = std::make_shared<NativeReanimatedModule>(std::move(animatedRuntime),
   applierRegistry,

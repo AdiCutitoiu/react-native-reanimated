@@ -10,7 +10,7 @@
 #include <memory>
 #include "Logger.h"
 
-void RuntimeDecorator::addNativeObjects(jsi::Runtime &rt, UpdaterFunction updater) {
+void RuntimeDecorator::addNativeObjects(jsi::Runtime &rt, std::shared_ptr<ApplierRegistry> applierRegistry, UpdaterFunction updater) {
   auto callback = [](
       jsi::Runtime &rt,
       const jsi::Value &thisValue,
@@ -46,5 +46,24 @@ void RuntimeDecorator::addNativeObjects(jsi::Runtime &rt, UpdaterFunction update
   };
   jsi::Value updateProps = jsi::Function::createFromHostFunction(rt, jsi::PropNameID::forAscii(rt, "_updateProps"), 2, clb);
   rt.global().setProperty(rt, "_updateProps", updateProps);
+
+
+  auto clb2 = [applierRegistry](
+      jsi::Runtime &rt,
+      const jsi::Value &thisValue,
+      const jsi::Value *args,
+      size_t count
+      ) -> jsi::Value {
+    std::shared_ptr<jsi::Function> body;
+    jsi::Function fun = args[0].getObject(rt).asFunction(rt);
+    std::shared_ptr<jsi::Function> funPtr(new jsi::Function(std::move(fun)));
+    applierRegistry->registerAnimationFrameCallback(funPtr);
+//    const auto viewTag = args[0].asNumber();
+//    const auto params = args[1].asObject(rt);
+//    updater(rt, viewTag, params);
+    return jsi::Value::undefined();
+  };
+  jsi::Value requestAnimationFrame = jsi::Function::createFromHostFunction(rt, jsi::PropNameID::forAscii(rt, "_requestAnimationFrame"), 1, clb2);
+  rt.global().setProperty(rt, "_requestAnimationFrame", requestAnimationFrame);
 
 }

@@ -64,11 +64,28 @@ jsi::Value SharedDouble::asParameter(jsi::Runtime &rt, std::shared_ptr<SharedVal
       sd.lock()->value = newValue.asNumber();
     }
 
+    void set(jsi::Runtime &rt, const jsi::PropNameID &name, const jsi::Value &value) {
+      auto propName = name.utf8(rt);
+
+      if (propName == "value") {
+        auto setter = rt.global().getPropertyAsObject(rt, "Reanimated").getPropertyAsFunction(rt, "zet");
+        setter.callWithThis(rt, sd.lock()->parameter.getObject(rt), value);
+      } else if (propName == "_value") {
+        cleanBeforeSet(rt);
+        forceSet(rt, value);
+      } else if (propName == "_animation") {
+        sd.lock()->animation = value.asObject(rt);
+      }
+
+    }
+
     jsi::Value get(jsi::Runtime &rt, const jsi::PropNameID &name) {
       auto propName = name.utf8(rt);
 
       if (propName == "value") {
         return jsi::Value(sd.lock()->value);
+      } else if (propName == "_animation") {
+        return sd.lock()->animation.isUndefined() ? jsi::Value::undefined() : sd.lock()->animation.getObject(rt);
       } else if (propName == "set") {
 
         auto callback = [this](

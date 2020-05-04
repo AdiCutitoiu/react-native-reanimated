@@ -13,6 +13,10 @@ ApplierRegistry::ApplierRegistry(
   this->mapperRegistry = mapperRegistry;
 }
 
+void ApplierRegistry::registerAnimationFrameCallback(std::shared_ptr<jsi::Function> callback) {
+  animationFrameCallbacks.push_back(callback);
+}
+
 void ApplierRegistry::registerApplierForRender(int id, std::shared_ptr<Applier> applier) {
   renderAppliers[id] = applier;
 }
@@ -40,7 +44,7 @@ void ApplierRegistry::unregisterApplierFromEvent(int id) {
 }
 
 bool ApplierRegistry::notEmpty() {
-  return renderAppliers.size() > 0;
+  return renderAppliers.size() > 0 or animationFrameCallbacks.size() > 0;
 }
 
 void ApplierRegistry::evaluateAppliers(
@@ -68,6 +72,11 @@ void ApplierRegistry::evaluateAppliers(
 }
 
 void ApplierRegistry::render(jsi::Runtime &rt, std::shared_ptr<BaseWorkletModule> module) {
+  auto callbacks = animationFrameCallbacks;
+  animationFrameCallbacks.clear();
+  for (auto & callback : callbacks) {
+    callback->call(rt);
+  }
   evaluateAppliers(rt,
                    module,
                    renderAppliers,

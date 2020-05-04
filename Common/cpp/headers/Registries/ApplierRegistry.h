@@ -16,9 +16,11 @@ class ApplierRegistry {
     std::map<std::string, std::unordered_map<int, std::shared_ptr<Applier>>> eventAppliers;
     std::map<int, std::string> eventMapping;
     std::shared_ptr<MapperRegistry> mapperRegistry;
+    std::vector<std::shared_ptr<jsi::Function>> animationFrameCallbacks;
   public:
     ApplierRegistry(
         std::shared_ptr<MapperRegistry> mapperRegistry);
+    void registerAnimationFrameCallback(std::shared_ptr<jsi::Function> callback);
     void registerApplierForRender(int id, std::shared_ptr<Applier> applier);
     void unregisterApplierFromRender(int id, jsi::Runtime &rt);
     void registerApplierForEvent(int id, std::string eventName, std::shared_ptr<Applier> applier);

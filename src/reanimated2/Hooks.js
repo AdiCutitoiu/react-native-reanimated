@@ -358,7 +358,7 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
     return value;
   }
 
-  const newValues = input.body(unwrap(input.input));
+  const newValues = input.body(unwrap(input.input)) || {};
   let oldValues = memory.last || unwrap(input.initial);
 
   function isAnimated(prop) {
@@ -473,7 +473,6 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
   memory.last = Object.assign({}, oldValues, newValues);
 
   if (Object.keys(diff).length !== 0) {
-    console.log('UP ' + JSON.stringify(diff));
     _updateProps(input.viewTag.value, diff);
   }
 });
@@ -485,9 +484,9 @@ export function useAnimatedStyle(body, input) {
   const wtf = useSharedValue(-1);
   const animation = useWorklet(animationUpdater7, [viewTag, wtf]);
 
-  console.log('DDDD', unwrap(input));
-  const initial = sanitize(body(unwrap(input)));
+  const initial = sanitize(body(unwrap(input)) || {});
 
+  console.log('WTTT', unwrap(input));
   const sharedInitial = useSharedValue(initial);
 
   const mapper = useMapper(styleUpdater7, [
@@ -507,7 +506,6 @@ export function useAnimatedStyle(body, input) {
 
   return {
     viewTag,
-    mapper,
     initial,
   };
 }

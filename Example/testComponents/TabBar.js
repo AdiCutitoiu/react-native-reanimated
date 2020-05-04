@@ -1,242 +1,232 @@
 import React from 'react';
-import Animated, { useSharedValue, useEventWorklet, useSpring, useMapper } from 'react-native-reanimated';
-import { View, Dimensions, StyleSheet } from 'react-native';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome'
-import { faCoffee, faTrash, faUser, faList, faReply } from '@fortawesome/free-solid-svg-icons'
+import Animated, {
+  useSharedValue,
+  useEventWorklet,
+  useSpring,
+  useMapper,
+} from 'react-native-reanimated';
+import {
+  View,
+  Dimensions,
+  StyleSheet,
+  TouchableWithoutFeedback,
+} from 'react-native';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import {
+  faCoffee,
+  faTrash,
+  faUser,
+  faList,
+  faReply,
+} from '@fortawesome/free-solid-svg-icons';
 import { TapGestureHandler } from 'react-native-gesture-handler';
-import Svg, { Path } from "react-native-svg";
+import Svg, { Path } from 'react-native-svg';
+import * as shape from 'd3-shape';
+import { useAnimatedStyle } from '../../src/reanimated2/Hooks';
 
-const { width, height } = Dimensions.get("window");
-const tabHeight = 64;
+const { width, height } = Dimensions.get('window');
 
 let tabs = [
-    {
-        name: "coffee",
-        item: faCoffee,
-    },
-    {
-        name: "list",
-        item: faList,
-    },
-    {
-        name: "reply",
-        item: faReply,
-    },
-    {
-        name: "trash",
-        item: faTrash,
-    },
-    {
-        name: "user",
-        item: faUser,
-    },
+  {
+    name: 'coffee',
+    item: faCoffee,
+  },
+  {
+    name: 'list',
+    item: faList,
+  },
+  {
+    name: 'reply',
+    item: faReply,
+  },
+  {
+    name: 'trash',
+    item: faTrash,
+  },
+  {
+    name: 'user',
+    item: faUser,
+  },
 ];
+
 const tabWidth = width / tabs.length;
 
-const styles = StyleSheet.create({
-    container: {
-      flexDirection: "row",
-      backgroundColor: 'white',
-    },
-    tab: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      height: 64,
-      zIndex: 2,
-      backgroundColor: 'white',
-    },
-    activeIcon: {
-      backgroundColor: "white",
-      width: 40,
-      height: 40,
-      borderRadius: 20,
-      justifyContent: "center",
-      alignItems: "center",
-    },
-  });
+const getPath = () => {
+  const tab = shape.line().curve(shape.curveBasis)([
+    [0, 0],
+    [tabWidth / 4, 0],
+    [tabWidth / 2, 8],
+    [tabWidth, 80],
+    [(tabWidth / 2) * 3, 8],
+    [(tabWidth / 4) * 7, 0],
+    [tabWidth * 2, 0],
+  ]);
+  return `${tab}`;
+};
+const d = getPath();
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+const styles = StyleSheet.create({
+  container: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+  },
+  tab: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 64,
+    zIndex: 2,
+  },
+  activeIcon: {
+    backgroundColor: 'white',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+function Button({
+  item,
+  index,
+  activeIndex,
+  width,
+  position,
+  indicatorPosition,
+}) {
+  // would be nice if I didn't have to wrap it into shareable here
+  const shareablePosition = useSharedValue(position);
+  const shareableWidth = useSharedValue(width);
+
+  const staticIconStyle = useAnimatedStyle(
+    ({ position, indicatorPosition, width }) => {
+      'worklet';
+      const visibility = Reanimated.interpolate(
+        indicatorPosition,
+        [
+          position - width / 2,
+          position - width / 8,
+          position + width / 8,
+          position + width / 2,
+        ],
+        [1, 0, 0, 1],
+        Extrapolate.CLAMP
+      );
+      return {
+        opacity: visibility,
+        transform: [{ translateY: 10 * (1 - visibility) }],
+      };
+    },
+    { position: shareablePosition, indicatorPosition, width: shareableWidth }
+  );
+
+  return (
+    <TouchableWithoutFeedback onPress={() => activeIndex.set(index)}>
+      <View style={styles.tab}>
+        <Animated.View style={staticIconStyle}>
+          <FontAwesomeIcon icon={item} color="black" size={25} />
+        </Animated.View>
+      </View>
+    </TouchableWithoutFeedback>
+  );
+}
+
+function ActiveIcon({ item, index, activeIndex, width }) {
+  const shareableIndex = useSharedValue(index);
+  const circleIconStyle = useAnimatedStyle(
+    ({ index, activeIndex }) => {
+      'worklet';
+      const yOffset = index === activeIndex ? 0 : 80;
+      return {
+        transform: [{ translateY: Reanimated.withSpring(yOffset) }],
+      };
+    },
+    { activeIndex, index: shareableIndex }
+  );
+  return (
+    <Animated.View
+      style={[
+        {
+          position: 'absolute',
+          width: width,
+          top: -8,
+          left: width / 2,
+          height: 64,
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 5,
+        },
+        circleIconStyle,
+      ]}>
+      <View style={styles.activeIcon}>
+        <FontAwesomeIcon icon={item} color="black" size={25} />
+      </View>
+    </Animated.View>
+  );
+}
 
 const Bar = () => {
-    const tabWidthSV = useSharedValue(tabWidth)
-    const widthSV = useSharedValue(width)
-    const tabHeightSV = useSharedValue(tabHeight)
-    
-    const activeIndex = useSharedValue(0)
-    const followerPosition = useSharedValue(-width + tabWidth/2)
-    const newIndex = useSharedValue(-1)
-    const tabsSA = useSharedValue(tabs.map((item, index) => {
-        return {
-            active: (index === 0) ? 1 : 0,
-            translateY: (index === 0) ? 0 : 64,
-            opacity: (index === 0) ? 0 : 1,
-            opacityReverse: (index !== 0) ? 0 : 1,
-        }
-    }))
+  const indicatorPosition = useSharedValue(20);
+  const activeIndex = useSharedValue(0);
 
-    const values = {
-      opacity: {
-        min: 0,
-        max: 1,
-      },
-      translateY: {
-        min: 0,
-        max: 64,
-      },
-    }
+  const shareableTabWidth = useSharedValue(width / tabs.length);
 
-    const commands = useSharedValue('');
-    const mapper = useMapper(
-      function(input, output) {
-        'worklet';
-        
-        const { width, tabWidth, tabHeight } = input;
-        const height = 30//tabHeight.value
+  const mapper = useMapper(
+    (input, output) => {
+      'worklet';
+      output.indicatorPosition.value = Reanimated.withTiming(
+        input.activeIndex.value * input.tabWidth.value +
+          input.tabWidth.value / 2,
+        { duration: 500 }
+      );
+    },
+    [{ activeIndex, tabWidth: shareableTabWidth }, { indicatorPosition }]
+  );
+  mapper();
 
-        // todo replace pos with current tab position
-        const curveWidth = width.value * 2
-        const pos = curveWidth / 2 - tabWidth.value/2;
-        const left = `
-          M${ 0 } ${ 0 }
-          L${ 0 } ${ height }
-        `;
+  const indicatorStyle = useAnimatedStyle(
+    input => {
+      'worklet';
+      return {
+        transform: [{ translateX: input.indicatorPosition }],
+      };
+    },
+    { indicatorPosition }
+  );
 
-        const bezierCurves = `
-          C
-          ${ pos } ${ height }
-          ${ pos + 10 } ${ height }
-          ${ pos + 10 } ${ height + 20 }
-          C
-          ${ pos + 10 } ${ height + 20 }
-          ${ pos + 10} ${ height + 60 }
-          ${ pos + tabWidth.value/2 } ${ height + 60 }
-          C
-          ${ pos + tabWidth.value/2 } ${ height + 60 }
-          ${ pos + tabWidth.value - 10 } ${ height + 60 }
-          ${ pos + tabWidth.value - 10 } ${ height + 20 }
-          C
-          ${ pos + tabWidth.value - 10 } ${ height + 20 }
-          ${ pos + tabWidth.value - 10 } ${ height }
-          ${ curveWidth - 350 } ${ height }
-        `;
-
-        const right = `
-          L${ curveWidth } ${ 0 }
-          L${ 0 } ${ 0 }
-        `;
-
-        output.commands.set(`${ left } ${ bezierCurves } ${ right }`);
-      }, [{ width, tabWidth, tabHeight }, { commands }]
-    );
-    mapper();
-
-    const spring = useSpring({},{});
-
-    const opWorklet = useEventWorklet(function(input) {
-      'worklet'
-      if (this.event.state !== 2) {
-          return false
-      }
-      const index = Math.floor(this.event.absoluteX / input.tabWidthSV.value)
-      if (index !== input.activeIndex.value && input.newIndex.value === -1) {
-        input.newIndex.set(index)
-
-        this.log('[event worklet] index switch: ' + input.activeIndex.value + ' -> ' + index)
-        const newFollowerDest = (-input.widthSV.value + input.tabWidthSV.value / 2) + index * input.tabWidthSV.value
-        input.followerPosition.set(Reanimated.withWorkletCopy(input.spring.worklet, [{}, {
-          toValue: newFollowerDest,
-          damping: 100,
-        }]));
-            
-
-        // move down item that's being deactivated
-        input.tabsSA[input.activeIndex.value].translateY.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.translateY.max.value }
-        ]))
-
-        // move down item that's being activated
-        input.tabsSA[input.newIndex.value].translateY.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.translateY.min.value }
-        ]))
-
-        // make visible item that's being activated
-        input.tabsSA[input.newIndex.value].opacity.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.opacity.min.value }
-        ]))
-        input.tabsSA[input.newIndex.value].opacityReverse.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.opacity.max.value }
-        ]))
-
-        // make invisible item that's being deactivated
-        input.tabsSA[input.activeIndex.value].opacity.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.opacity.max.value }
-        ]))
-        input.tabsSA[input.activeIndex.value].opacityReverse.set(Reanimated.withWorkletCopy(input.spring.worklet, [
-          {},
-          { toValue: input.values.opacity.min.value }
-        ]))
-
-
-        input.activeIndex.set(index)
-        input.newIndex.set(-1)
-      }
-
-    }, { tabWidthSV, tabsSA, activeIndex, tabHeightSV, values, newIndex, spring, followerPosition, widthSV })
-    
-    return (
-        <View style={styles.container}>
-          <Svg {...{ width: width * 2, height: 100, position: 'absolute', bottom: 0, zIndex: 3 }}>
-            <AnimatedPath d={commands} fill="red" style={ { transform: [{
-              translateX: followerPosition,
-            }] } } />
-          </Svg>
-          {
-            tabs.map((tab, key) => {
-              const tabWidth = width / tabs.length;
-              const cursor = tabWidth * key;
-              return (
-                <React.Fragment {...{ key }}>
-                  <TapGestureHandler onHandlerStateChange={opWorklet}>
-                    <Animated.View style={[
-                          styles.tab,
-                          {
-                            opacity: tabsSA[key].opacity,
-                          }
-                    ]}>
-                      <FontAwesomeIcon icon={ tab.item } color="black" size={25} />
-                    </Animated.View>
-                  </TapGestureHandler>
-                  <Animated.View
-                    style={{
-                      position: "absolute",
-                      top: -8,
-                      left: tabWidth * key,
-                      width: tabWidth,
-                      height: 64,
-                      justifyContent: "center",
-                      alignItems: "center",
-                      opacity: tabsSA[key].opacityReverse,
-                      transform: [{ translateY: tabsSA[key].translateY }],
-                      zIndex: 5,
-                    }}
-                  >
-                    <View style={styles.activeIcon}>
-                      <FontAwesomeIcon icon={ tab.item } color="black" size={25} />
-                    </View>
-                  </Animated.View>
-                </React.Fragment>
-              );
-            })
-          }
-        </View>
-    )
-}
+  return (
+    <View style={styles.container}>
+      <Animated.View
+        style={[{ position: 'absolute', left: -tabWidth }, indicatorStyle]}>
+        {tabs.map((tab, index) => (
+          <ActiveIcon
+            index={index}
+            activeIndex={activeIndex}
+            item={tab.item}
+            width={tabWidth}
+          />
+        ))}
+        <Svg width={tabWidth * 2} height={64}>
+          <Path fill="red" {...{ d }} />
+        </Svg>
+      </Animated.View>
+      {tabs.map((tab, index) => {
+        const position = tabWidth * index + tabWidth / 2; // item center
+        return (
+          <Button
+            index={index}
+            activeIndex={activeIndex}
+            item={tab.item}
+            width={tabWidth}
+            indicatorPosition={indicatorPosition}
+            position={position}
+          />
+        );
+      })}
+    </View>
+  );
+};
 
 const tabBarStyles = StyleSheet.create({
   container: {
@@ -246,18 +236,18 @@ const tabBarStyles = StyleSheet.create({
     backgroundColor: 'red',
   },
   dummyPusher: {
-      flex: 1,
+    flex: 1,
+    height: 300,
   },
-})
-
+});
 
 const TabBar = () => {
   return (
-    <View style={ tabBarStyles.container }>
-      <View style={ tabBarStyles.dummyPusher } />
+    <View style={tabBarStyles.container}>
+      <View style={tabBarStyles.dummyPusher} />
       <Bar />
     </View>
-  )
-}
+  );
+};
 
-export default TabBar
+export default TabBar;
