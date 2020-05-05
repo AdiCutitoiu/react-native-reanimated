@@ -19,7 +19,6 @@ import {
   faList,
   faReply,
 } from '@fortawesome/free-solid-svg-icons';
-import { TapGestureHandler } from 'react-native-gesture-handler';
 import Svg, { Path } from 'react-native-svg';
 import * as shape from 'd3-shape';
 import { useAnimatedStyle } from '../../src/reanimated2/Hooks';
@@ -134,16 +133,25 @@ function Button({
 
 function ActiveIcon({ item, index, activeIndex, width }) {
   const shareableIndex = useSharedValue(index);
+
   const circleIconStyle = useAnimatedStyle(
     ({ index, activeIndex }) => {
-      'worklet';
-      const yOffset = index === activeIndex ? 0 : 80;
+      const isActive = index === activeIndex;
+      const yOffset = isActive ? 0 : 80;
       return {
-        transform: [{ translateY: Reanimated.withSpring(yOffset) }],
+        transform: [
+          {
+            translateY: Reanimated.delay(
+              isActive ? 150 : 0,
+              Reanimated.withTiming(yOffset)
+            ),
+          },
+        ],
       };
     },
-    { activeIndex, index: shareableIndex }
+    { activeIndex, index }
   );
+
   return (
     <Animated.View
       style={[

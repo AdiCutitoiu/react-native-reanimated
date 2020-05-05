@@ -64,6 +64,40 @@ export function installFunctions(innerNativeModule) {
     }
   });
 
+  install('Reanimated.delay', function(delayMs, nextAnimation) {
+    'worklet';
+
+    function delay(animation) {
+      const { startTime, started } = animation;
+
+      const now = Date.now();
+      if (!startTime) {
+        animation.startTime = now;
+        return false;
+      }
+      if (now - startTime > delayMs) {
+        if (!started) {
+          nextAnimation.current = animation.current;
+          nextAnimation.velocity = animation.velocity;
+        }
+        const finished = nextAnimation.animation(nextAnimation);
+        animation.current = nextAnimation.current;
+        animation.velocity = nextAnimation.velocity;
+        return finished;
+      }
+      return false;
+    }
+    return {
+      animation: delay,
+      velocity: 0,
+      started: false,
+      current: nextAnimation.current,
+    };
+  });
+  global.Reanimated.delay = (delayMs, nextAnimation) => {
+    return nextAnimation;
+  };
+
   install('Reanimated.withTiming', function(toValue, userConfig) {
     'worklet';
 
@@ -90,6 +124,11 @@ export function installFunctions(innerNativeModule) {
       const { progress, startTime, current } = animation;
 
       const now = Date.now();
+      if (!startTime) {
+        animation.startTime = now;
+        return false;
+      }
+
       const runtime = now - startTime;
 
       if (runtime >= config.duration) {
@@ -109,7 +148,6 @@ export function installFunctions(innerNativeModule) {
       animation: timing,
       velocity: 0,
       progress: 0,
-      startTime: Date.now(),
       current: toValue,
     };
   });
