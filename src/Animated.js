@@ -73,6 +73,7 @@ import WorkletEventHandler from './reanimated2/WorkletEventHandler';
 import {
   useWorklet,
   useEventWorklet,
+  useAnimatedEventHandler,
   useAnimatedGestureHandler,
   useAnimatedProcessor,
   useSharedValue,
@@ -103,6 +104,7 @@ export {
   WorkletEventHandler,
   useWorklet,
   useEventWorklet,
+  useAnimatedEventHandler,
   useAnimatedProcessor,
   useAnimatedGestureHandler,
   useMapper,

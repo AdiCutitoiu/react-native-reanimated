@@ -197,6 +197,17 @@ export function useAnimatedProcessor(body, inputs, outputs) {
   mapper();
 }
 
+export function useAnimatedEventHandler(handler, argsDict) {
+  const eventWorklet = useEventWorklet(
+    function(handler, args) {
+      'worklet';
+      handler(this.event, args, Reanimated.memory(this));
+    },
+    [handler, argsDict]
+  );
+  return eventWorklet;
+}
+
 export function useAnimatedGestureHandler(handlers, argsDict) {
   const eventWorklet = useEventWorklet(
     function(handlers, args) {
@@ -332,57 +343,11 @@ function sanitize(obj) {
   return value;
 }
 
-const animationUpdater7 = new Worklet(function(viewTag, styleApplierId) {
-  'worklet';
-  const styleUpdaterMemory = Reanimated.container[styleApplierId.value];
-  const { animations, last } = styleUpdaterMemory;
-
-  function runAnimations(animation, key, result) {
-    if (Array.isArray(animation)) {
-      result[key] = [];
-      return animation.every((entry, index) =>
-        runAnimations(entry, index, result[key])
-      );
-    } else if (typeof animation === 'object' && animation.animation) {
-      const finished = animation.animation(animation);
-      if (finished) {
-        animation.finished = true;
-      }
-      result[key] = animation.current;
-      return finished;
-    } else if (typeof animation === 'object') {
-      result[key] = {};
-      return Object.keys(animation).every(k =>
-        runAnimations(animation[k], k, result[key])
-      );
-    } else {
-      result[key] = animation;
-      return true;
-    }
-  }
-
-  const updates = {};
-  let allFinished = true;
-  Object.keys(animations).forEach(propName => {
-    const finished = runAnimations(animations[propName], propName, updates);
-    if (finished) {
-      last[propName] = updates[propName];
-      delete animations[propName];
-    } else {
-      allFinished = false;
-    }
-  });
-
-  if (Object.keys(updates).length) {
-    _updateProps(viewTag.value, updates);
-  }
-  return allFinished;
-});
-
-const styleUpdater7 = new Worklet(function(input, applierId) {
+const styleUpdater = new Worklet(function(input) {
   'worklet';
   const memory = Reanimated.memory(this);
   const animations = memory.animations || {};
+  const { viewTag, isInstalled } = input;
 
   const newValues = input.body(Reanimated.myunwrap(input.input)) || {};
   let oldValues = memory.last || Reanimated.myunwrap(input.initial);
@@ -485,12 +450,69 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
     }
   });
 
+  function runAnimations(animation, key, result) {
+    if (Array.isArray(animation)) {
+      result[key] = [];
+      return animation.every((entry, index) =>
+        runAnimations(entry, index, result[key])
+      );
+    } else if (typeof animation === 'object' && animation.animation) {
+      const finished = animation.animation(animation);
+      if (finished) {
+        animation.finished = true;
+      }
+      result[key] = animation.current;
+      return finished;
+    } else if (typeof animation === 'object') {
+      result[key] = {};
+      return Object.keys(animation).every(k =>
+        runAnimations(animation[k], k, result[key])
+      );
+    } else {
+      result[key] = animation;
+      return true;
+    }
+  }
+
+  function frame() {
+    const { animations, last, isAnimationCancelled } = memory;
+    if (isAnimationCancelled || !isInstalled.value) {
+      memory.isAnimationRunning = false;
+      return;
+    }
+
+    const updates = {};
+    let allFinished = true;
+    Object.keys(animations).forEach(propName => {
+      const finished = runAnimations(animations[propName], propName, updates);
+      if (finished) {
+        last[propName] = updates[propName];
+        delete animations[propName];
+      } else {
+        allFinished = false;
+      }
+    });
+
+    if (Object.keys(updates).length) {
+      _updateProps(viewTag.value, updates);
+    }
+
+    if (!allFinished) {
+      _requestAnimationFrame(frame);
+    } else {
+      memory.isAnimationRunning = false;
+    }
+  }
+
   if (hasAnimations) {
     memory.animations = animations;
-    applierId.set(this.applierId);
-    input.animation.start();
+    if (!memory.isAnimationRunning) {
+      memory.isAnimationCancelled = false;
+      memory.isAnimationRunning = true;
+      _requestAnimationFrame(frame);
+    }
   } else {
-    input.animation.stop();
+    memory.isAnimationCancelled = true;
     memory.animations = {};
   }
 
@@ -505,28 +527,26 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
 
 export function useAnimatedStyle(body, input) {
   const viewTag = useSharedValue(-1);
-  const sharedBody = useSharedValue(body);
-  const sharedInput = useSharedValue(input);
-  const wtf = useSharedValue(-1);
-  const animation = useWorklet(animationUpdater7, [viewTag, wtf]);
 
+  const isInstalled = useSharedValue(1);
   const initial = sanitize(body(unwrap(input)) || {});
 
-  const sharedInitial = useSharedValue(initial);
-
-  const mapper = useMapper(styleUpdater7, [
+  const mapper = useMapper(styleUpdater, [
     {
-      input: sharedInput,
-      initial: sharedInitial,
-      body: sharedBody,
-      animation,
+      input,
+      initial,
+      body,
       viewTag,
+      isInstalled,
     },
-    wtf,
+    {},
   ]);
 
   useEffect(() => {
     mapper.startMapping();
+    return () => {
+      isInstalled.set(0);
+    };
   }, []);
 
   return {
