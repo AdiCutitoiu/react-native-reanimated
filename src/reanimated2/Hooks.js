@@ -108,7 +108,6 @@ function commonCode(body, args, createRes) {
   const releaseObj = useRef(null);
 
   const init = function() {
-    console.log('init common code');
     let argsCopy = [];
     if (args !== undefined) {
       if (Array.isArray(args)) {
@@ -172,17 +171,14 @@ function commonCode(body, args, createRes) {
 }
 
 export function useWorklet(body, args) {
-  console.log('useWorklet');
   return commonCode(body, args, (releaseApplierHolder, body, argsCopy) => {
     return () => {
-      console.log('startAnimation');
       releaseApplierHolder.get = body.apply(argsCopy);
     };
   });
 }
 
 export function useMapper(body, args) {
-  console.log('useMapper');
   return commonCode(body, args, (releaseApplierHolder, body, argsCopy) => {
     return () => {
       releaseApplierHolder.get = body.registerAsMapper(argsCopy);
@@ -190,20 +186,79 @@ export function useMapper(body, args) {
   });
 }
 
+export function useAnimatedProcessor(body, inputs, outputs) {
+  const mapper = useMapper(
+    (inputs, outputs, body) => {
+      'worklet';
+      body(Reanimated.myunwrap(inputs), outputs);
+    },
+    [inputs, outputs, body]
+  );
+  mapper();
+}
+
+export function useAnimatedGestureHandler(handlers, argsDict) {
+  const eventWorklet = useEventWorklet(
+    function(handlers, args) {
+      'worklet';
+      const event = this.event;
+      const context = Reanimated.memory(this);
+
+      const UNDETERMINED = 0;
+      const FAILED = 1;
+      const BEGAN = 2;
+      const CANCELLED = 3;
+      const ACTIVE = 4;
+      const END = 5;
+
+      if (event.oldState === UNDETERMINED && handlers.onStart) {
+        handlers.onStart(event, args, context);
+      }
+      if (event.state === ACTIVE && handlers.onActive) {
+        handlers.onActive(event, args, context);
+      }
+      if (event.oldState === ACTIVE && event.state === END && handlers.onEnd) {
+        handlers.onEnd(event, args, context);
+      }
+      if (
+        event.oldState === ACTIVE &&
+        event.state === FAILED &&
+        handlers.onFail
+      ) {
+        handlers.onFail(event, args, context);
+      }
+      if (
+        event.oldState === ACTIVE &&
+        event.state === CANCELLED &&
+        handlers.onCancel
+      ) {
+        handlers.onCancel(event, args, context);
+      }
+      if (event.oldState === ACTIVE && handlers.onFinish) {
+        handlers.onFinish(
+          event,
+          args,
+          context,
+          event.state === CANCELLED || event.state === FAILED
+        );
+      }
+    },
+    [handlers, argsDict]
+  );
+  return eventWorklet;
+}
+
 export function useEventWorklet(body, args) {
-  console.log('useEventWorklet');
   return commonCode(body, args, (releaseApplierHolder, body, argsCopy) => {
     return new WorkletEventHandler(body, argsCopy);
   });
 }
 
 export function useSharedValue(initial) {
-  console.log('useShared');
   const sv = useRef(null);
   let release = () => {};
 
   const init = () => {
-    console.log('init');
     [sv.current, release] = makeShareable(initial);
     return release;
   };
@@ -213,14 +268,11 @@ export function useSharedValue(initial) {
   }
 
   useEffect(() => {
-    console.log('sharedValue useEffect');
-
     return () => {
       if (sv.current) {
         release();
         sv.current = null;
       }
-      console.log('clear');
     };
   }, []);
 
@@ -332,34 +384,8 @@ const styleUpdater7 = new Worklet(function(input, applierId) {
   const memory = Reanimated.memory(this);
   const animations = memory.animations || {};
 
-  // would be great if we could avoid this
-  function unwrap(obj) {
-    if (Array.isArray(obj)) {
-      const res = [];
-      for (let ele of obj) {
-        res.push(unwrap(ele));
-      }
-      return res;
-    }
-
-    // I don't understand why I need to do this but some objects have value and others
-    // don't.
-    const value = obj.value === undefined ? obj : obj.value;
-    if (typeof value === 'object') {
-      const res = {};
-      Object.keys(value).forEach(propName => {
-        if (propName !== 'id') {
-          res[propName] = unwrap(value[propName]);
-        }
-      });
-      return res;
-    }
-
-    return value;
-  }
-
-  const newValues = input.body(unwrap(input.input)) || {};
-  let oldValues = memory.last || unwrap(input.initial);
+  const newValues = input.body(Reanimated.myunwrap(input.input)) || {};
+  let oldValues = memory.last || Reanimated.myunwrap(input.initial);
 
   function isAnimated(prop) {
     if (typeof prop === 'object') {
@@ -486,7 +512,6 @@ export function useAnimatedStyle(body, input) {
 
   const initial = sanitize(body(unwrap(input)) || {});
 
-  console.log('WTTT', unwrap(input));
   const sharedInitial = useSharedValue(initial);
 
   const mapper = useMapper(styleUpdater7, [

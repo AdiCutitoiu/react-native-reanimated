@@ -2,6 +2,7 @@ import React from 'react';
 import Animated, {
   useSharedValue,
   useEventWorklet,
+  useAnimatedProcessor,
   useSpring,
   useMapper,
 } from 'react-native-reanimated';
@@ -173,18 +174,17 @@ const Bar = () => {
   const indicatorPosition = useSharedValue(20);
   const activeIndex = useSharedValue(0);
 
-  const mapper = useMapper(
-    (input, output) => {
+  useAnimatedProcessor(
+    ({ activeIndex, tabWidth }, output) => {
       'worklet';
       output.indicatorPosition.value = Reanimated.withTiming(
-        input.activeIndex.value * input.tabWidth.value +
-          input.tabWidth.value / 2,
+        activeIndex * tabWidth + tabWidth / 2,
         { duration: 500 }
       );
     },
-    [{ activeIndex, tabWidth }, { indicatorPosition }]
+    { activeIndex, tabWidth },
+    { indicatorPosition }
   );
-  mapper();
 
   const indicatorStyle = useAnimatedStyle(
     input => {

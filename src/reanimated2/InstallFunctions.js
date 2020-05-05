@@ -31,18 +31,48 @@ export function installFunctions(innerNativeModule) {
     }
   });
 
+  // would be great if we could avoid this
+  install('Reanimated.myunwrap', function(obj) {
+    'worklet';
+    if (Array.isArray(obj)) {
+      const res = [];
+      for (let ele of obj) {
+        res.push(Reanimated.myunwrap(ele));
+      }
+      return res;
+    }
+
+    // I don't understand why I need to do this but some objects have value and others
+    // don't.
+    const value = obj.value === undefined ? obj : obj.value;
+    if (typeof value === 'object') {
+      const res = {};
+      Object.keys(value).forEach(propName => {
+        if (propName !== 'id') {
+          res[propName] = Reanimated.myunwrap(value[propName]);
+        }
+      });
+      return res;
+    }
+
+    return value;
+  });
+
   install('Reanimated.zet', function(value) {
     'worklet';
     const previousAnimation = this._animation;
     if (previousAnimation) {
-      // TODO: stop prev animation
-      previousAnimation;
+      previousAnimation.cancelled = true;
+      this._animation = null;
     }
     if (typeof value === 'object' && value !== null && value.animation) {
       // animated set
       const animation = value;
       const that = this;
       function step() {
+        if (animation.cancelled) {
+          return;
+        }
         const finished = value.animation(animation);
         that._value = animation.current;
         if (!finished) {
@@ -58,6 +88,7 @@ export function installFunctions(innerNativeModule) {
         animation.velocity = 0;
       }
 
+      this._animation = animation;
       _requestAnimationFrame(step);
     } else {
       this._value = value;

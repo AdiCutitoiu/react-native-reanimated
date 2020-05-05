@@ -74,7 +74,7 @@ jsi::Value SharedDouble::asParameter(jsi::Runtime &rt, std::shared_ptr<SharedVal
         cleanBeforeSet(rt);
         forceSet(rt, value);
       } else if (propName == "_animation") {
-        sd.lock()->animation = value.asObject(rt);
+        sd.lock()->animation = jsi::Value(rt, value);
       }
 
     }
@@ -85,7 +85,7 @@ jsi::Value SharedDouble::asParameter(jsi::Runtime &rt, std::shared_ptr<SharedVal
       if (propName == "value") {
         return jsi::Value(sd.lock()->value);
       } else if (propName == "_animation") {
-        return sd.lock()->animation.isUndefined() ? jsi::Value::undefined() : sd.lock()->animation.getObject(rt);
+        return jsi::Value(rt, sd.lock()->animation);
       } else if (propName == "set") {
 
         auto callback = [this](
