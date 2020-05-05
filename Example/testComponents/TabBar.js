@@ -173,8 +173,6 @@ const Bar = () => {
   const indicatorPosition = useSharedValue(20);
   const activeIndex = useSharedValue(0);
 
-  const shareableTabWidth = useSharedValue(width / tabs.length);
-
   const mapper = useMapper(
     (input, output) => {
       'worklet';
@@ -184,7 +182,7 @@ const Bar = () => {
         { duration: 500 }
       );
     },
-    [{ activeIndex, tabWidth: shareableTabWidth }, { indicatorPosition }]
+    [{ activeIndex, tabWidth }, { indicatorPosition }]
   );
   mapper();
 
