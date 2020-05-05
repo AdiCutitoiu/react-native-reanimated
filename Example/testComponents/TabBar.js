@@ -94,10 +94,6 @@ function Button({
   position,
   indicatorPosition,
 }) {
-  // would be nice if I didn't have to wrap it into shareable here
-  const shareablePosition = useSharedValue(position);
-  const shareableWidth = useSharedValue(width);
-
   const staticIconStyle = useAnimatedStyle(
     ({ position, indicatorPosition, width }) => {
       'worklet';
@@ -117,7 +113,7 @@ function Button({
         transform: [{ translateY: 10 * (1 - visibility) }],
       };
     },
-    { position: shareablePosition, indicatorPosition, width: shareableWidth }
+    { position, indicatorPosition, width }
   );
 
   return (
@@ -132,10 +128,9 @@ function Button({
 }
 
 function ActiveIcon({ item, index, activeIndex, width }) {
-  const shareableIndex = useSharedValue(index);
-
   const circleIconStyle = useAnimatedStyle(
     ({ index, activeIndex }) => {
+      'worklet';
       const isActive = index === activeIndex;
       const yOffset = isActive ? 0 : 80;
       return {
