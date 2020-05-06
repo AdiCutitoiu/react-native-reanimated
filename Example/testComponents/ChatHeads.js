@@ -55,19 +55,6 @@ function ChatHeads({ followers, children }) {
         const minDistance = Math.min(top, bottom, left, right);
         let snapX = targetX;
         let snapY = targetY;
-        console.log(
-          'DDD' +
-            JSON.stringify([
-              params.transX.value,
-              params.transY.value,
-              targetX,
-              targetY,
-              top,
-              bottom,
-              left,
-              right,
-            ])
-        );
         switch (minDistance) {
           case top:
             snapY = 0;
