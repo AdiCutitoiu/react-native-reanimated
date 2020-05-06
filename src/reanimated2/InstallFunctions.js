@@ -75,7 +75,9 @@ export function installFunctions(innerNativeModule) {
         }
         const finished = value.animation(animation);
         that._value = animation.current;
-        if (!finished) {
+        if (finished) {
+          animation.callback && animation.callback(true /* finished */);
+        } else {
           _requestAnimationFrame(step);
         }
       }
@@ -186,7 +188,7 @@ export function installFunctions(innerNativeModule) {
     return toValue;
   };
 
-  install('Reanimated.withSpring', function(toValue, userConfig) {
+  install('Reanimated.withSpring', function(toValue, userConfig, callback) {
     'worklet';
 
     const config = {
@@ -279,6 +281,7 @@ export function installFunctions(innerNativeModule) {
       velocity: 0,
       time: Date.now(),
       current: toValue,
+      callback,
     };
   });
   global.Reanimated.withSpring = (toValue, config = undefined) => {

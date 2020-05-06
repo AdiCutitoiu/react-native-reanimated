@@ -61,14 +61,17 @@ export default () => {
       onEnd: (event, inputs, ctx) => {
         'worklet';
         const { initialWaveCenter, isBack, centerY, progress } = inputs;
+        let goBack = 0;
         if (isBack.value) {
-          isBack.value = progress.value > 0.5 ? 1 : 0;
+          goBack = progress.value > 0.5 ? 1 : 0;
         } else {
           // TODO: want to use a boolean here
-          isBack.value = progress.value > 0.2 ? 1 : 0;
+          goBack = progress.value > 0.2 ? 1 : 0;
         }
         centerY.value = Reanimated.withSpring(initialWaveCenter.value);
-        progress.value = Reanimated.withSpring(isBack.value ? 1 : 0);
+        progress.value = Reanimated.withSpring(goBack ? 1 : 0, {}, () => {
+          isBack.value = goBack;
+        });
       },
     },
     {
