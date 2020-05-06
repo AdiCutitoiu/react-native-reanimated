@@ -144,7 +144,7 @@ export function installFunctions(innerNativeModule) {
     return nextAnimation;
   };
 
-  install('Reanimated.withTiming', function(toValue, userConfig) {
+  install('Reanimated.withTiming', function(toValue, userConfig, callback) {
     'worklet';
 
     function inOut(easing) {
@@ -195,6 +195,7 @@ export function installFunctions(innerNativeModule) {
       velocity: 0,
       progress: 0,
       current: toValue,
+      callback,
     };
   });
   global.Reanimated.withTiming = (toValue, config = undefined) => {
@@ -291,7 +292,7 @@ export function installFunctions(innerNativeModule) {
 
     return {
       animation: spring,
-      velocity: 0,
+      velocity: config.velocity || 0,
       time: Date.now(),
       current: toValue,
       callback,

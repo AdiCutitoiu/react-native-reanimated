@@ -32,6 +32,7 @@ import WithWorklet from './testComponents/WithWorklet';
 import FunctionInstallTest from './testComponents/FunctionInstallTest';
 import LiquidSwipe from './LiquidSwipe/index';
 import TabBar from './testComponents/TabBar.js';
+import ChatHeads from './testComponents/ChatHeads.js';
 
 // set components here:
 const components = {
@@ -117,5 +118,5 @@ const createApp = Platform.select({
   default: input => createAppContainer(input),
 });
 
-export default LiquidSwipe;
+export default ChatHeads;
 // export default createApp(ExampleApp);
