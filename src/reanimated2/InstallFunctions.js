@@ -58,6 +58,18 @@ export function installFunctions(innerNativeModule) {
     return value;
   });
 
+  install('Reanimated.cancelAnimation', function(value) {
+    'worklet';
+    const previousAnimation = value._animation;
+    if (previousAnimation) {
+      previousAnimation.cancelled = true;
+      value._animation = null;
+    }
+  });
+  global.Reanimated.cancelAnimation = function(value) {
+    // do nothing
+  };
+
   install('Reanimated.zet', function(value) {
     'worklet';
     const previousAnimation = this._animation;
@@ -71,6 +83,7 @@ export function installFunctions(innerNativeModule) {
       const that = this;
       function step() {
         if (animation.cancelled) {
+          animation.callback && animation.callback(false /* finished */);
           return;
         }
         const finished = value.animation(animation);

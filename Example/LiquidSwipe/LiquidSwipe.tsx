@@ -35,6 +35,9 @@ export default () => {
     {
       onStart: (event, inputs, ctx) => {
         'worklet';
+        // stop animating progress, this will also place "isBack" value in the
+        // final state (we update isBack in progress animation callback)
+        Reanimated.cancelAnimation(inputs.progress);
         ctx.dragX = 0;
         ctx.startY = inputs.isBack.value ? event.y : inputs.centerY.value;
       },
@@ -61,7 +64,7 @@ export default () => {
       onEnd: (event, inputs, ctx) => {
         'worklet';
         const { initialWaveCenter, isBack, centerY, progress } = inputs;
-        let goBack = 0;
+        let goBack;
         if (isBack.value) {
           goBack = progress.value > 0.5 ? 1 : 0;
         } else {
