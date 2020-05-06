@@ -25,10 +25,7 @@ const styles = StyleSheet.create({
 
 export default () => {
   const isBack = useSharedValue(0);
-  const gestureProgress = useSharedValue(0);
-  const maxDist = useSharedValue(width - initialSideWidth);
   const centerY = useSharedValue(initialWaveCenter);
-
   const progress = useSharedValue(0);
 
   const handler = useAnimatedGestureHandler(
