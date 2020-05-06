@@ -73,12 +73,14 @@ import WorkletEventHandler from './reanimated2/WorkletEventHandler';
 import {
   useWorklet,
   useEventWorklet,
+  useDerivedValue,
   useAnimatedEventHandler,
   useAnimatedGestureHandler,
   useAnimatedProcessor,
   useSharedValue,
   useMapper,
   useAnimatedStyle,
+  useAnimatedProps,
   install,
 } from './reanimated2/Hooks';
 import RegistersState from './reanimated2/RegistersState';
@@ -104,6 +106,8 @@ export {
   WorkletEventHandler,
   useWorklet,
   useEventWorklet,
+  useDerivedValue,
+  useAnimatedProps,
   useAnimatedEventHandler,
   useAnimatedProcessor,
   useAnimatedGestureHandler,

@@ -227,6 +227,10 @@ export default function createAnimatedComponent(Component) {
           style.viewTag.set(viewTag);
         }
       });
+      // attach animatedProps property
+      if (this.props.animatedProps) {
+        this.props.animatedProps.viewTag.set(viewTag);
+      }
     }
 
     _detachPropUpdater() {
@@ -278,6 +282,10 @@ export default function createAnimatedComponent(Component) {
           props[key] = this._filterNonAnimatedStyle(
             StyleSheet.flatten(processedStyle)
           );
+        } else if (key === 'animatedProps') {
+          Object.keys(value.initial).forEach(key => {
+            props[key] = value.initial[key];
+          });
         } else if (
           value instanceof AnimatedEvent ||
           value instanceof WorkletEventHandler ||

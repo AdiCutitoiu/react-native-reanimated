@@ -186,6 +186,20 @@ export function useMapper(body, args) {
   });
 }
 
+export function useDerivedValue(body, inputs) {
+  const initial = sanitize(body(unwrap(inputs)) || 0);
+  const derived = useSharedValue(initial);
+  const mapper = useMapper(
+    (inputs, derived, body) => {
+      'worklet';
+      derived.value = body(Reanimated.myunwrap(inputs));
+    },
+    [inputs, derived, body]
+  );
+  mapper();
+  return derived;
+}
+
 export function useAnimatedProcessor(body, inputs, outputs) {
   const mapper = useMapper(
     (inputs, outputs, body) => {
@@ -524,6 +538,10 @@ const styleUpdater = new Worklet(function(input) {
     _updateProps(input.viewTag.value, diff);
   }
 });
+
+export function useAnimatedProps(body, input) {
+  return useAnimatedStyle(body, input);
+}
 
 export function useAnimatedStyle(body, input) {
   const viewTag = useSharedValue(-1);

@@ -117,5 +117,5 @@ const createApp = Platform.select({
   default: input => createAppContainer(input),
 });
 
-export default TabBar;
+export default LiquidSwipe;
 // export default createApp(ExampleApp);

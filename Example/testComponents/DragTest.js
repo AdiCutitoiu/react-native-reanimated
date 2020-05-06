@@ -4,11 +4,11 @@ import Animated, {
   useSharedValue,
   useWorklet,
   useEventWorklet,
+  useAnimatedStyle,
   useAnimatedGestureHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import ReanimatedModule from '../../src/ReanimatedModule';
-import { useAnimatedStyle } from '../../src/reanimated2/Hooks';
 
 function DragTest() {
   const transX = useSharedValue(0);

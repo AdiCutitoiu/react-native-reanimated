@@ -3,6 +3,8 @@ import Animated, {
   useSharedValue,
   useEventWorklet,
   useAnimatedProcessor,
+  useAnimatedStyle,
+  useDerivedValue,
   useSpring,
   useMapper,
 } from 'react-native-reanimated';
@@ -22,7 +24,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Svg, { Path } from 'react-native-svg';
 import * as shape from 'd3-shape';
-import { useAnimatedStyle } from '../../src/reanimated2/Hooks';
 
 const { width, height } = Dimensions.get('window');
 
@@ -171,19 +172,16 @@ function ActiveIcon({ item, index, activeIndex, width }) {
 }
 
 const Bar = () => {
-  const indicatorPosition = useSharedValue(20);
   const activeIndex = useSharedValue(0);
 
-  useAnimatedProcessor(
-    ({ activeIndex, tabWidth }, output) => {
+  const indicatorPosition = useDerivedValue(
+    ({ activeIndex, tabWidth }) => {
       'worklet';
-      output.indicatorPosition.value = Reanimated.withTiming(
-        activeIndex * tabWidth + tabWidth / 2,
-        { duration: 500 }
-      );
+      return Reanimated.withTiming(activeIndex * tabWidth + tabWidth / 2, {
+        duration: 500,
+      });
     },
-    { activeIndex, tabWidth },
-    { indicatorPosition }
+    { activeIndex, tabWidth }
   );
 
   const indicatorStyle = useAnimatedStyle(

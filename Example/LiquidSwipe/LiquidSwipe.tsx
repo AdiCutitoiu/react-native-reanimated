@@ -2,12 +2,10 @@ import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
-  useEventWorklet,
-  useSpring,
+  useAnimatedGestureHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Weave from './Weave';
-import { useSnapProgress } from './AnimationHelpers';
 import { initialSideWidth, initialWaveCenter } from './WeaveHelpers';
 import Content from './Content';
 import Button from './Button';
@@ -27,51 +25,60 @@ const styles = StyleSheet.create({
 
 export default () => {
   const isBack = useSharedValue(0);
-  const state = useSharedValue(0);
   const gestureProgress = useSharedValue(0);
   const maxDist = useSharedValue(width - initialSideWidth);
-  const snapPoint = useSharedValue(0);
   const centerY = useSharedValue(initialWaveCenter);
-  const spring = useSpring({}, {});
 
-  const handler = useEventWorklet(
-    function(
-      gestureProgress,
-      isBack,
-      state,
-      maxDist,
-      snapPoint,
-      spring,
-      centerY
-    ) {
-      'worklet';
-      let { velocityX, translationX, y } = this.event;
-      state.set(this.event.state);
+  const progress = useSharedValue(0);
 
-      if (isBack.value === 1) {
-        gestureProgress.set(
-          Reanimated.interpolate(translationX, [0, maxDist.value], [1, 0])
-        );
-      } else {
-        gestureProgress.set(
-          Reanimated.interpolate(translationX, [-maxDist.value, 0], [0.4, 0])
-        );
-      }
-
-      // snapPoint
-      velocityX =
-        -velocityX /
-        (isBack.value * maxDist.value +
-          (1 - isBack.value) * 0.4 * maxDist.value);
-      const point = gestureProgress.value + 0.2 * velocityX;
-      snapPoint.set(Reanimated.clamp(point, [0, 1]));
-      // centerY
-      centerY.set(Reanimated.withWorklet(spring.worklet, [{}, { toValue: y }]));
+  const handler = useAnimatedGestureHandler(
+    {
+      onStart: (event, inputs, ctx) => {
+        'worklet';
+        ctx.dragX = 0;
+        ctx.startY = inputs.isBack.value ? event.y : inputs.centerY.value;
+      },
+      onActive: (event, inputs, ctx) => {
+        'worklet';
+        const { centerY, isBack, progress } = inputs;
+        centerY.value = ctx.startY + event.translationY;
+        if (isBack.value) {
+          progress.value = Reanimated.interpolate(
+            event.translationX,
+            [0, inputs.maxDist.value],
+            [1, 0],
+            Extrapolate.CLAMP
+          );
+        } else {
+          progress.value = Reanimated.interpolate(
+            event.translationX,
+            [-inputs.maxDist.value, 0],
+            [0.4, 0],
+            Extrapolate.CLAMP
+          );
+        }
+      },
+      onEnd: (event, inputs, ctx) => {
+        'worklet';
+        const { initialWaveCenter, isBack, centerY, progress } = inputs;
+        if (isBack.value) {
+          isBack.value = progress.value > 0.5 ? 1 : 0;
+        } else {
+          // TODO: want to use a boolean here
+          isBack.value = progress.value > 0.2 ? 1 : 0;
+        }
+        centerY.value = Reanimated.withSpring(initialWaveCenter.value);
+        progress.value = Reanimated.withSpring(isBack.value ? 1 : 0);
+      },
     },
-    [gestureProgress, isBack, state, maxDist, snapPoint, spring, centerY]
+    {
+      progress,
+      centerY,
+      initialWaveCenter,
+      isBack,
+      maxDist: width - initialSideWidth,
+    }
   );
-
-  const progress = useSnapProgress(gestureProgress, state, isBack, snapPoint);
 
   return (
     <View style={styles.container}>
@@ -86,7 +93,7 @@ export default () => {
         onGestureEvent={handler}
         onHandlerStateChange={handler}>
         <Animated.View style={StyleSheet.absoluteFill}>
-          <Weave {...{ progress, centerY, isBack }}>
+          <Weave progress={progress} centerY={centerY} isBack={isBack}>
             <Content
               backgroundColor="#4d1168"
               source={assets[1]}
@@ -95,7 +102,7 @@ export default () => {
               color="#fd5587"
             />
           </Weave>
-          <Button y={centerY} {...{ progress }} />
+          <Button y={centerY} progress={progress} />
         </Animated.View>
       </PanGestureHandler>
     </View>
