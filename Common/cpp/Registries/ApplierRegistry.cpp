@@ -73,11 +73,11 @@ void ApplierRegistry::evaluateAppliers(
   }
 }
 
-void ApplierRegistry::render(jsi::Runtime &rt, std::shared_ptr<BaseWorkletModule> module) {
+void ApplierRegistry::render(jsi::Runtime &rt, std::shared_ptr<BaseWorkletModule> module, double timestampMs) {
   auto callbacks = animationFrameCallbacks;
   animationFrameCallbacks.clear();
   for (auto & callback : callbacks) {
-    callback->call(rt);
+    callback->call(rt, timestampMs);
   }
   evaluateAppliers(rt,
                    module,

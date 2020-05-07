@@ -55,7 +55,7 @@ class NativeReanimatedModule : public NativeReanimatedModuleSpec {
     virtual void registerMapper(jsi::Runtime &rt, int id, int workletId, std::vector<int> svIds) override;
     virtual void unregisterMapper(jsi::Runtime &rt, int id) override;
 
-    void render();
+    void render(double timestampMs);
     void onEvent(std::string eventName, std::string eventAsString);
 
     std::unique_ptr<jsi::Runtime> runtime;

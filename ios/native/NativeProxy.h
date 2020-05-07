@@ -19,7 +19,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (void)clear;
 
-+ (NSArray<NSArray*>*) getChangedSharedValuesAfterRender;
++ (NSArray<NSArray*>*) getChangedSharedValuesAfterRender:(CFTimeInterval)timestamp;
 + (NSArray<NSArray*>*) getChangedSharedValuesAfterEvent:(NSString *)eventName event:(id<RCTEvent>)event;
 
 + (BOOL)shouldEventBeHijacked:(NSString*)eventName;

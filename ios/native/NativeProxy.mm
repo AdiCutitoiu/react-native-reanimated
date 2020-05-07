@@ -93,12 +93,12 @@ std::shared_ptr<IOSScheduler> scheduler;
   nativeReanimatedModule.reset();
 }
 
-+ (NSArray<NSArray*>*) getChangedSharedValuesAfterRender
++ (NSArray<NSArray *> *)getChangedSharedValuesAfterRender:(CFTimeInterval)timestamp
 {
   try {
     if (nativeReanimatedModule->errorHandler->getError() == nullptr ||
         !nativeReanimatedModule->errorHandler->getError()->handled) {
-      nativeReanimatedModule->render();
+      nativeReanimatedModule->render(timestamp * 1000.0 /* convert to milliseconds */); 
     }
   } catch(const std::exception &e) {
     if (nativeReanimatedModule->errorHandler->getError() == nullptr) {

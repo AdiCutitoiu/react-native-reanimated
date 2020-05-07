@@ -429,6 +429,7 @@ const styleUpdater = new Worklet(function(input) {
             // it was an animation before, copy its state
             animatedProp.current = lastAnimation.current;
             animatedProp.velocity = lastAnimation.velocity;
+            animatedProp.timestamp = lastAnimation.timestamp;
           }
         } else {
           // previously it was a plan value, just set it as starting point
@@ -464,14 +465,15 @@ const styleUpdater = new Worklet(function(input) {
     }
   });
 
-  function runAnimations(animation, key, result) {
+  function runAnimations(animation, timestamp, key, result) {
     if (Array.isArray(animation)) {
       result[key] = [];
       return animation.every((entry, index) =>
-        runAnimations(entry, index, result[key])
+        runAnimations(entry, timestamp, index, result[key])
       );
     } else if (typeof animation === 'object' && animation.animation) {
-      const finished = animation.animation(animation);
+      const finished = animation.animation(animation, timestamp);
+      animation.timestamp = timestamp;
       if (finished) {
         animation.finished = true;
       }
@@ -480,7 +482,7 @@ const styleUpdater = new Worklet(function(input) {
     } else if (typeof animation === 'object') {
       result[key] = {};
       return Object.keys(animation).every(k =>
-        runAnimations(animation[k], k, result[key])
+        runAnimations(animation[k], timestamp, k, result[key])
       );
     } else {
       result[key] = animation;
@@ -488,7 +490,7 @@ const styleUpdater = new Worklet(function(input) {
     }
   }
 
-  function frame() {
+  function frame(timestamp) {
     const { animations, last, isAnimationCancelled } = memory;
     if (isAnimationCancelled || !isInstalled.value) {
       memory.isAnimationRunning = false;
@@ -498,7 +500,12 @@ const styleUpdater = new Worklet(function(input) {
     const updates = {};
     let allFinished = true;
     Object.keys(animations).forEach(propName => {
-      const finished = runAnimations(animations[propName], propName, updates);
+      const finished = runAnimations(
+        animations[propName],
+        timestamp,
+        propName,
+        updates
+      );
       if (finished) {
         last[propName] = updates[propName];
         delete animations[propName];

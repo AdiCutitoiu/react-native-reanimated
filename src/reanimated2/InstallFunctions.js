@@ -80,12 +80,13 @@ export function installFunctions(innerNativeModule) {
     if (typeof value === 'object' && value !== null && value.animation) {
       // animated set
       const animation = value;
-      const step = () => {
+      const step = timestamp => {
         if (animation.cancelled) {
           animation.callback && animation.callback(false /* finished */);
           return;
         }
-        const finished = value.animation(animation);
+        const finished = value.animation(animation, timestamp);
+        animation.timestamp = timestamp;
         this._value = animation.current;
         if (finished) {
           animation.callback && animation.callback(true /* finished */);
@@ -97,6 +98,7 @@ export function installFunctions(innerNativeModule) {
       if (previousAnimation) {
         animation.current = previousAnimation.current;
         animation.velocity = previousAnimation.velocity;
+        animation.timestamp = previousAnimation.timestamp;
       } else {
         animation.current = this.value;
         animation.velocity = 0;
@@ -112,10 +114,9 @@ export function installFunctions(innerNativeModule) {
   install('Reanimated.delay', function(delayMs, nextAnimation) {
     'worklet';
 
-    function delay(animation) {
+    function delay(animation, now) {
       const { startTime, started } = animation;
 
-      const now = Date.now();
       if (!startTime) {
         animation.startTime = now;
         return false;
@@ -124,8 +125,10 @@ export function installFunctions(innerNativeModule) {
         if (!started) {
           nextAnimation.current = animation.current;
           nextAnimation.velocity = animation.velocity;
+          nextAnimation.timestamp = animation.timestamp;
         }
-        const finished = nextAnimation.animation(nextAnimation);
+        const finished = nextAnimation.animation(nextAnimation, now);
+        nextAnimation.timestamp = now;
         animation.current = nextAnimation.current;
         animation.velocity = nextAnimation.velocity;
         return finished;
@@ -165,10 +168,9 @@ export function installFunctions(innerNativeModule) {
       ...userConfig,
     };
 
-    function timing(animation) {
+    function timing(animation, now) {
       const { progress, startTime, current } = animation;
 
-      const now = Date.now();
       if (!startTime) {
         animation.startTime = now;
         return false;
@@ -214,12 +216,10 @@ export function installFunctions(innerNativeModule) {
       ...userConfig,
     };
 
-    function spring(animation) {
-      const { time, current, velocity } = animation;
+    function spring(animation, now) {
+      const { timestamp = now, current, velocity } = animation;
 
-      const now = Date.now();
-      const deltaTime = Math.min(now - time, 64);
-      animation.time = now;
+      const deltaTime = Math.min(now - timestamp, 64);
 
       const c = config.damping;
       const m = config.mass;
@@ -292,7 +292,6 @@ export function installFunctions(innerNativeModule) {
     return {
       animation: spring,
       velocity: config.velocity || 0,
-      time: Date.now(),
       current: toValue,
       callback,
     };

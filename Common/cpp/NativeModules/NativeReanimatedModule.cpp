@@ -362,7 +362,7 @@ void NativeReanimatedModule::unregisterMapper(jsi::Runtime &rt, int id) {
   });
 }
 
-void NativeReanimatedModule::render() {
+void NativeReanimatedModule::render(double timestampMs) {
 
   if (this->workletModule == nullptr) {
     this->workletModule = std::shared_ptr<BaseWorkletModule>(new WorkletModule(
@@ -372,7 +372,7 @@ void NativeReanimatedModule::render() {
       this->dummyEvent));
   }
   SpeedChecker::checkSpeed("Render:", [=] () {
-    applierRegistry->render(*runtime, this->workletModule);
+    applierRegistry->render(*runtime, this->workletModule, timestampMs);
   });
 }
 

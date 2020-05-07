@@ -147,13 +147,13 @@
 
 - (void)onAnimationFrame:(CADisplayLink *)displayLink
 {
-  NSArray<NSArray*> *changedSharedValues = [NativeProxy getChangedSharedValuesAfterRender];
+  _currentAnimationTimestamp = _displayLink.timestamp;
+  NSArray<NSArray*> *changedSharedValues = [NativeProxy getChangedSharedValuesAfterRender:_currentAnimationTimestamp];
   for (NSArray *sv in changedSharedValues) {
     [REASharedValueNode setSharedValue:sv[0] newValue:sv[1]];
   }
   
   // We process all enqueued events first
-  _currentAnimationTimestamp = _displayLink.timestamp;
   for (NSUInteger i = 0; i < _eventQueue.count; i++) {
     id<RCTEvent> event = _eventQueue[i];
     [self processEvent:event];
