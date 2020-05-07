@@ -1,19 +1,19 @@
-import React from "react";
-import { Image, StyleSheet, Text, View } from "react-native";
+import React from 'react';
+import { Image, StyleSheet, Text, View } from 'react-native';
 
 const styles = StyleSheet.create({
   title1: {
     fontSize: 48,
-    fontWeight: "300"
+    fontWeight: '300',
   },
   title2: {
     fontSize: 48,
-    fontWeight: "600"
+    fontWeight: '600',
   },
   description: {
     opacity: 0.5,
-    fontSize: 16
-  }
+    fontSize: 16,
+  },
 });
 
 interface ContentProps {
@@ -29,7 +29,7 @@ export default ({
   backgroundColor,
   source,
   title1,
-  title2
+  title2,
 }: ContentProps) => {
   return (
     <View
@@ -37,10 +37,9 @@ export default ({
         ...StyleSheet.absoluteFillObject,
         padding: 32,
         backgroundColor,
-        alignItems: "center",
-        justifyContent: "space-around"
-      }}
-    >
+        alignItems: 'center',
+        justifyContent: 'space-around',
+      }}>
       <Image {...{ source }} />
       <View>
         <Text style={[styles.title1, { color }]}>{title1}</Text>
