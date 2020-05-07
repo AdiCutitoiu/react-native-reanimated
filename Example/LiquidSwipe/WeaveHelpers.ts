@@ -1,7 +1,7 @@
-import Animated, { useSharedValue, useMapper } from "react-native-reanimated";
-import { Dimensions } from "react-native";
+import Animated, { useSharedValue, useMapper } from 'react-native-reanimated';
+import { Dimensions } from 'react-native';
 
-const { height, width } = Dimensions.get("window");
+const { height, width } = Dimensions.get('window');
 
 export const initialVertRadius = 82;
 export const maxVertRadius = height * 0.9;
@@ -28,9 +28,14 @@ export function useSideWidth(progress) {
       } else if (progress.value >= p2) {
         sideWidth.set(width.value);
       } else {
-        sideWidth.set(initialSideWidth.value + (width.value - initialSideWidth.value) * (progress.value - p1) / (p2 - p1));
+        sideWidth.set(
+          initialSideWidth.value +
+            ((width.value - initialSideWidth.value) * (progress.value - p1)) /
+              (p2 - p1)
+        );
       }
-    }, [{ progress, initialSideWidth, width }, { sideWidth }]
+    },
+    [{ progress, initialSideWidth, width }, { sideWidth }]
   );
   mapper();
   return sideWidth;
@@ -48,9 +53,14 @@ export function useWaveVertRadius(progress) {
       } else if (progress.value >= 0.4) {
         waveVertRadius.set(maxVertRadius.value);
       } else {
-        waveVertRadius.set(initialVertRadius.value + (maxVertRadius.value - initialVertRadius.value)*(progress.value/0.4));
+        waveVertRadius.set(
+          initialVertRadius.value +
+            (maxVertRadius.value - initialVertRadius.value) *
+              (progress.value / 0.4)
+        );
       }
-    }, [{ progress, initialVertRadius, maxVertRadius }, { waveVertRadius }]
+    },
+    [{ progress, initialVertRadius, maxVertRadius }, { waveVertRadius }]
   );
   mapper();
   return waveVertRadius;
@@ -58,7 +68,10 @@ export function useWaveVertRadius(progress) {
 
 export function useWaveHorR(progress, isBack) {
   const waveHorR = useSharedValue(initialHorRadius);
-  const coefs = useSharedValue([{A: maxHorRadius, B: maxHorRadius - initialHorRadius}, {A: 2 * initialHorRadius, B: initialHorRadius}]);
+  const coefs = useSharedValue([
+    { A: maxHorRadius, B: maxHorRadius - initialHorRadius },
+    { A: 2 * initialHorRadius, B: initialHorRadius },
+  ]);
   const mapper = useMapper(
     function(input, output) {
       'worklet';
@@ -71,22 +84,24 @@ export function useWaveHorR(progress, isBack) {
       const k = 50;
       const omega0 = k / m;
       const omega = (-(beta ** 2) + omega0 ** 2) ** 0.5;
-      const t = (progress.value - p1)/(1-p1);
+      const t = (progress.value - p1) / (1 - p1);
       const { A, B } = coefs[isBack.value];
- 
+
       if (progress.value <= 0) {
         waveHorR.set(initialHorRadius.value);
       } else if (progress.value >= 1) {
         waveHorR.set(0);
       } else {
         if (progress.value <= p1) {
-          waveHorR.set(initialHorRadius.value + progress.value/p1 * B.value);
+          waveHorR.set(
+            initialHorRadius.value + (progress.value / p1) * B.value
+          );
         } else {
-          waveHorR.set(A.value * (Math.exp(t * (-beta)) * Math.cos(omega * t)));
+          waveHorR.set(A.value * (Math.exp(t * -beta) * Math.cos(omega * t)));
         }
       }
-
-    }, [{ progress, isBack, coefs, initialHorRadius}, { waveHorR }]
+    },
+    [{ progress, isBack, coefs, initialHorRadius }, { waveHorR }]
   );
   mapper();
   return waveHorR;

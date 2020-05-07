@@ -1,4 +1,8 @@
-import Animated, { useSharedValue, useMapper, useSpring } from "react-native-reanimated";
+import Animated, {
+  useSharedValue,
+  useMapper,
+  useSpring,
+} from 'react-native-reanimated';
 
 export function useSnapProgress(value, state, isBack, point) {
   const position = useSharedValue(0);
@@ -17,11 +21,12 @@ export function useSnapProgress(value, state, isBack, point) {
   const onSpringFinish = useMapper(
     function(input, output) {
       'worklet';
-       if (input.finish.value == 1) {
-          output.isBack.set(input.point.value);
-          input.finish.set(0);
-       }
-    }, [{finish: spring.state.finished, point}, { isBack }]
+      if (input.finish.value == 1) {
+        output.isBack.set(input.point.value);
+        input.finish.set(0);
+      }
+    },
+    [{ finish: spring.state.finished, point }, { isBack }]
   );
 
   const mapper = useMapper(
@@ -34,14 +39,18 @@ export function useSnapProgress(value, state, isBack, point) {
       if (state.value == Reanimated.START) {
         position.stop();
       }
-      if ((state.value == Reanimated.ACTIVE) || (state.value == Reanimated.START)) {
-        position.set(Reanimated.interpolate(value.value, [0, 1], [0, 1], Extrapolate.CLAMP));
+      if (state.value == Reanimated.ACTIVE || state.value == Reanimated.START) {
+        position.set(
+          Reanimated.interpolate(value.value, [0, 1], [0, 1], Extrapolate.CLAMP)
+        );
       }
       if (state.value == Reanimated.END) {
-        position.set(Reanimated.withWorklet(spring.worklet, [{}, {toValue: point.value}]));
+        position.set(
+          Reanimated.withWorklet(spring.worklet, [{}, { toValue: point.value }])
+        );
       }
-
-    }, [{ state, value, point }, { position }, { spring }]
+    },
+    [{ state, value, point }, { position }, { spring }]
   );
 
   mapper();
