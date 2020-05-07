@@ -80,26 +80,25 @@ export function installFunctions(innerNativeModule) {
     if (typeof value === 'object' && value !== null && value.animation) {
       // animated set
       const animation = value;
-      const that = this;
-      function step() {
+      const step = () => {
         if (animation.cancelled) {
           animation.callback && animation.callback(false /* finished */);
           return;
         }
         const finished = value.animation(animation);
-        that._value = animation.current;
+        this._value = animation.current;
         if (finished) {
           animation.callback && animation.callback(true /* finished */);
         } else {
           _requestAnimationFrame(step);
         }
-      }
+      };
 
       if (previousAnimation) {
         animation.current = previousAnimation.current;
         animation.velocity = previousAnimation.velocity;
       } else {
-        animation.current = that.value;
+        animation.current = this.value;
         animation.velocity = 0;
       }
 
