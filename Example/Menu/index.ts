@@ -1,3 +1,3 @@
-export { default } from "./Menu";
+export { default } from './Menu';
 
-export const assets = [require("./assets/avatar.jpg")];
+export const assets = [require('./assets/avatar.jpg')];
