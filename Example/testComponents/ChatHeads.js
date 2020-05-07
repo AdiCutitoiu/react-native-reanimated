@@ -2,18 +2,15 @@ import React from 'react';
 import { Text, View, Dimensions, StyleSheet } from 'react-native';
 import Animated, {
   useSharedValue,
-  useWorklet,
-  useEventWorklet,
   useAnimatedStyle,
   useAnimatedGestureHandler,
-  useAnimatedProcessor,
+  useDerivedValue,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import ReanimatedModule from '../../src/ReanimatedModule';
 
 const { width, height } = Dimensions.get('window');
 
-function ChatHeads({ followers, children }) {
+function ChatHeads({ children }) {
   const transX = useSharedValue(0);
   const transY = useSharedValue(0);
 
@@ -123,17 +120,19 @@ function ChatHeads({ followers, children }) {
 }
 
 function Followers({ transX, transY, children }) {
-  const myTransX = useSharedValue(Math.random() * 10);
-  const myTransY = useSharedValue(Math.random() * 10);
-
-  useAnimatedProcessor(
-    ({ transX, transY }, { myTransX, myTransY }) => {
+  const myTransX = useDerivedValue(
+    ({ transX }) => {
       'worklet';
-      myTransX.value = Reanimated.withSpring(transX);
-      myTransY.value = Reanimated.withSpring(transY);
+      return Reanimated.withSpring(transX);
     },
-    { transX, transY },
-    { myTransX, myTransY }
+    { transX }
+  );
+  const myTransY = useDerivedValue(
+    ({ transY }) => {
+      'worklet';
+      return Reanimated.withSpring(transY);
+    },
+    { transY }
   );
 
   const stylez = useAnimatedStyle(
