@@ -68,7 +68,7 @@ jsi::Value SharedDouble::asParameter(jsi::Runtime &rt, std::shared_ptr<SharedVal
       auto propName = name.utf8(rt);
 
       if (propName == "value") {
-        auto setter = rt.global().getPropertyAsObject(rt, "Reanimated").getPropertyAsFunction(rt, "zet");
+        auto setter = rt.global().getPropertyAsObject(rt, "Reanimated").getPropertyAsFunction(rt, "setter");
         setter.callWithThis(rt, sd.lock()->parameter.getObject(rt), value);
       } else if (propName == "_value") {
         cleanBeforeSet(rt);

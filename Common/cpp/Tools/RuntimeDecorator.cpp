@@ -55,12 +55,9 @@ void RuntimeDecorator::addNativeObjects(jsi::Runtime &rt, std::shared_ptr<Applie
       size_t count
       ) -> jsi::Value {
     std::shared_ptr<jsi::Function> body;
-    jsi::Function fun = args[0].getObject(rt).asFunction(rt);
+    jsi::Function fun = args[0].asObject(rt).asFunction(rt);
     std::shared_ptr<jsi::Function> funPtr(new jsi::Function(std::move(fun)));
     applierRegistry->registerAnimationFrameCallback(funPtr);
-//    const auto viewTag = args[0].asNumber();
-//    const auto params = args[1].asObject(rt);
-//    updater(rt, viewTag, params);
     return jsi::Value::undefined();
   };
   jsi::Value requestAnimationFrame = jsi::Function::createFromHostFunction(rt, jsi::PropNameID::forAscii(rt, "_requestAnimationFrame"), 1, clb2);

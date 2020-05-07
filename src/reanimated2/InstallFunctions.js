@@ -70,7 +70,7 @@ export function installFunctions(innerNativeModule) {
     // do nothing
   };
 
-  install('Reanimated.zet', function(value) {
+  install('Reanimated.setter', function(value) {
     'worklet';
     const previousAnimation = this._animation;
     if (previousAnimation) {
@@ -209,7 +209,7 @@ export function installFunctions(innerNativeModule) {
       damping: 10,
       mass: 1,
       stiffness: 100,
-      overshootClamping: 0,
+      overshootClamping: false,
       restDisplacementThreshold: 0.001,
       restSpeedThreshold: 0.001,
       ...userConfig,

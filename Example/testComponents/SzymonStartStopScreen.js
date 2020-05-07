@@ -1,69 +1,45 @@
-import Animated, {
-  useSharedValue,
-  useWorklet,
-  useEventWorklet,
-  useMapper,
-  Worklet,
-  useAnimatedStyle,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, useWorklet, useEventWorklet, Worklet } from 'react-native-reanimated';
 import { View, Button } from 'react-native';
 import React, { useState, useRef } from 'react';
 
 export default function RotatingSquare(props) {
-  // const randomWidth = useSharedValue(1);
-  // const randomTranslate = useSharedValue(100);
-  const randomOpacity = useSharedValue(1);
-  const anything = useSharedValue(1);
+  const rotation = useSharedValue('0deg');
+  const deg = useSharedValue(0);
+  const startTime = useSharedValue(0);
+  const isWorking = useRef(false);
+  
 
-  const style = useAnimatedStyle(
-    input => {
-      'worklet';
-      const { randomWidth, randomTranslate } = input;
-      const { randomOpacity } = input;
+  const rotationWorklet = useWorklet(function(startTime, deg, rotation) {
+    'worklet';
+    if (startTime.value === 0) {
+      startTime.set(Date.now());
+    }
 
-      return {
-        // transform: [
-        //   {
-        //     translateX: Reanimated.withSpring(randomTranslate),
-        //   },
-        // ],
-        // width: Reanimated.withSpring(Math.round(randomWidth * 120)),
-        opacity: randomOpacity,
-      };
-    },
-    { randomOpacity }
-    // { randomWidth, randomTranslate }
-  );
+    const duration = 5000;
+    const timeSinceStart = (Date.now() - startTime.value) % duration;
+    deg.set((timeSinceStart / duration * 360 + deg.value) % 360);
+    rotation.set(deg.value.toString() + 'deg');
 
-  const mapper = useMapper(
-    (input, output) => {
-      'worklet';
-      output.randomOpacity.value = Reanimated.withSpring(Math.random());
-    },
-    [{ anything }, { randomOpacity }]
-  );
-  mapper();
+  }, [startTime, deg, rotation]);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        borderColor: 'black',
-        borderWidth: 2,
-        flexDirection: 'column',
-      }}>
+    <View style={{ flex:1, borderColor:'black', borderWidth:2, flexDirection: 'column' }}>
+      <Button title='toggle' onPress={ () => { 
+        if (isWorking.current) {
+          rotationWorklet.stop();
+          startTime.set(0);
+        } else {
+          rotationWorklet.start();
+        }
+        isWorking.current = !isWorking.current;
+       }} />
       <Animated.View
-        style={[
-          { width: 100, height: 80, backgroundColor: 'black', margin: 30 },
-          style,
-        ]}
-      />
-      <Button
-        title="toggle"
-        onPress={() => {
-          // randomTranslate.set(Math.random() * 200);
-          // randomWidth.set(Math.random());
-          anything.set(Math.random());
+        style={{
+          width: 40,
+          height: 40,
+          backgroundColor: 'black',
+          margin: 100,
+          transform: [{ rotate: rotation}],
         }}
       />
     </View>
