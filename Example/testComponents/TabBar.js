@@ -1,12 +1,8 @@
 import React from 'react';
 import Animated, {
   useSharedValue,
-  useEventWorklet,
-  useAnimatedProcessor,
   useAnimatedStyle,
   useDerivedValue,
-  useSpring,
-  useMapper,
 } from 'react-native-reanimated';
 import {
   View,

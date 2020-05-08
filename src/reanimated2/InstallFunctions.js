@@ -80,10 +80,17 @@ export function installFunctions(innerNativeModule) {
     if (typeof value === 'object' && value !== null && value.animation) {
       // animated set
       const animation = value;
+      let callStart = timestamp => {
+        animation.start(animation, this.value, timestamp, previousAnimation);
+      };
       const step = timestamp => {
         if (animation.cancelled) {
           animation.callback && animation.callback(false /* finished */);
           return;
+        }
+        if (callStart) {
+          callStart(timestamp);
+          callStart = null; // prevent closure from keeping ref to previous animation
         }
         const finished = value.animation(animation, timestamp);
         animation.timestamp = timestamp;
@@ -94,15 +101,6 @@ export function installFunctions(innerNativeModule) {
           _requestAnimationFrame(step);
         }
       };
-
-      if (previousAnimation) {
-        animation.current = previousAnimation.current;
-        animation.velocity = previousAnimation.velocity;
-        animation.timestamp = previousAnimation.timestamp;
-      } else {
-        animation.current = this.value;
-        animation.velocity = 0;
-      }
 
       this._animation = animation;
       _requestAnimationFrame(step);
@@ -115,34 +113,82 @@ export function installFunctions(innerNativeModule) {
     'worklet';
 
     function delay(animation, now) {
-      const { startTime, started } = animation;
+      const { startTime, started, previousAnimation } = animation;
 
-      if (!startTime) {
-        animation.startTime = now;
-        return false;
-      }
       if (now - startTime > delayMs) {
         if (!started) {
-          nextAnimation.current = animation.current;
-          nextAnimation.velocity = animation.velocity;
-          nextAnimation.timestamp = animation.timestamp;
+          nextAnimation.start(
+            nextAnimation,
+            animation.current,
+            now,
+            previousAnimation
+          );
+          animation.previousAnimation = null;
+          animation.started = true;
         }
         const finished = nextAnimation.animation(nextAnimation, now);
-        nextAnimation.timestamp = now;
         animation.current = nextAnimation.current;
-        animation.velocity = nextAnimation.velocity;
         return finished;
+      } else if (previousAnimation) {
+        const finished = previousAnimation.animation(previousAnimation, now);
+        animation.current = previousAnimation.current;
+        if (finished) {
+          animation.previousAnimation = null;
+        }
       }
       return false;
     }
+
+    function start(animation, value, now, previousAnimation) {
+      animation.startTime = now;
+      animation.started = false;
+      animation.current = value;
+      animation.previousAnimation = previousAnimation;
+    }
+
     return {
       animation: delay,
-      velocity: 0,
-      started: false,
+      start,
       current: nextAnimation.current,
     };
   });
   global.Reanimated.delay = (delayMs, nextAnimation) => {
+    return nextAnimation;
+  };
+
+  install('Reanimated.loop', function(nextAnimation, numberOfLoops = 1) {
+    'worklet';
+
+    function loop(animation, now) {
+      const finished = nextAnimation.animation(nextAnimation, now);
+      animation.current = nextAnimation.current;
+      if (finished) {
+        const finalValue = nextAnimation.current;
+        nextAnimation.toValue = animation.startValue;
+        nextAnimation.start(nextAnimation, finalValue, now, nextAnimation);
+        animation.startValue = finalValue;
+        animation.loops += 1;
+        return (
+          numberOfLoops > 0 && animation.loops >= Math.round(numberOfLoops * 2)
+        );
+      }
+      return false;
+    }
+
+    function start(animation, value, now, previousAnimation) {
+      animation.startValue = value;
+      animation.loops = 0;
+      nextAnimation.start(nextAnimation, value, now, previousAnimation);
+    }
+
+    return {
+      animation: loop,
+      start,
+      loops: 0,
+      current: nextAnimation.current,
+    };
+  });
+  global.Reanimated.loop = nextAnimation => {
     return nextAnimation;
   };
 
@@ -169,12 +215,7 @@ export function installFunctions(innerNativeModule) {
     };
 
     function timing(animation, now) {
-      const { progress, startTime, current } = animation;
-
-      if (!startTime) {
-        animation.startTime = now;
-        return false;
-      }
+      const { toValue, progress, startTime, current } = animation;
 
       const runtime = now - startTime;
 
@@ -191,10 +232,18 @@ export function installFunctions(innerNativeModule) {
       animation.progress = newProgress;
       return false;
     }
+
+    function start(animation, value, now, previousAnimation) {
+      animation.startTime = now;
+      animation.progress = 0;
+      animation.current = value;
+    }
+
     return {
       animation: timing,
-      velocity: 0,
+      start,
       progress: 0,
+      toValue,
       current: toValue,
       callback,
     };
@@ -217,9 +266,10 @@ export function installFunctions(innerNativeModule) {
     };
 
     function spring(animation, now) {
-      const { timestamp = now, current, velocity } = animation;
+      const { toValue, lastTimestamp, current, velocity } = animation;
 
-      const deltaTime = Math.min(now - timestamp, 64);
+      const deltaTime = Math.min(now - lastTimestamp, 64);
+      animation.lastTimestamp = now;
 
       const c = config.damping;
       const m = config.mass;
@@ -289,8 +339,21 @@ export function installFunctions(innerNativeModule) {
       }
     }
 
+    function start(animation, value, now, previousAnimation) {
+      animation.current = value;
+      if (previousAnimation) {
+        animation.velocity = previousAnimation.velocity || 0;
+        animation.lastTimestamp = previousAnimation.lastTimestamp || now;
+      } else {
+        animation.velocity = 0;
+        animation.lastTimestamp = now;
+      }
+    }
+
     return {
       animation: spring,
+      start,
+      toValue,
       velocity: config.velocity || 0,
       current: toValue,
       callback,

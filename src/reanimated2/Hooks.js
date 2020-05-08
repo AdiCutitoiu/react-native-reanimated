@@ -418,24 +418,27 @@ const styleUpdater = new Worklet(function(input) {
       return animatedProp;
     }
     if (typeof animatedProp === 'object' && animatedProp.animation) {
-      animatedProp.finished = false;
-      animatedProp.velocity = 0;
+      const animation = animatedProp;
+
+      let value = animation.current;
       if (lastValue !== undefined) {
         if (typeof lastValue === 'object') {
           if (lastValue.value !== undefined) {
             // previously it was a shared value
-            animatedProp.current = lastValue.value;
+            value = lastValue.value;
           } else if (lastValue.animation !== undefined) {
             // it was an animation before, copy its state
-            animatedProp.current = lastAnimation.current;
-            animatedProp.velocity = lastAnimation.velocity;
-            animatedProp.timestamp = lastAnimation.timestamp;
+            value = lastAnimation.current;
           }
         } else {
           // previously it was a plan value, just set it as starting point
-          animatedProp.current = lastValue;
+          value = lastValue;
         }
       }
+
+      animation.callStart = timestamp => {
+        animation.start(animation, value, timestamp, lastAnimation);
+      };
     } else if (typeof animatedProp === 'object') {
       // it is a object
       Object.keys(animatedProp).forEach(key =>
@@ -472,6 +475,10 @@ const styleUpdater = new Worklet(function(input) {
         runAnimations(entry, timestamp, index, result[key])
       );
     } else if (typeof animation === 'object' && animation.animation) {
+      if (animation.callStart) {
+        animation.callStart(timestamp);
+        animation.callStart = null;
+      }
       const finished = animation.animation(animation, timestamp);
       animation.timestamp = timestamp;
       if (finished) {

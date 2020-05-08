@@ -118,5 +118,5 @@ const createApp = Platform.select({
   default: input => createAppContainer(input),
 });
 
-export default ChatHeads;
+export default SzymonStartStopScreen;
 // export default createApp(ExampleApp);
