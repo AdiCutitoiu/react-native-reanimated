@@ -1,40 +1,38 @@
 import React from 'react';
 import { Dimensions, Text } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  interpolate2,
+  Extrapolate,
+} from 'react-native-reanimated';
 //import { Feather as Icon } from "@expo/vector-icons";
 
 const { width } = Dimensions.get('window');
 const size = 50;
 
 export default ({ progress, y }) => {
-  const style = useAnimatedStyle(
-    function(input) {
-      'worklet';
-      const { progress, y, size, width } = input;
-
-      return {
-        opacity: Reanimated.interpolate(
-          progress,
-          [0, 0.1],
-          [1, 0],
-          Extrapolate.CLAMP
-        ),
-        transform: [
-          {
-            translateX: Reanimated.interpolate(
-              progress,
-              [0, 0.4],
-              [width - size - 8, 0]
-            ),
-          },
-          {
-            translateY: y - size / 2,
-          },
-        ],
-      };
-    },
-    { progress, y, size, width }
-  );
+  const style = useAnimatedStyle(() => {
+    return {
+      opacity: interpolate2(
+        progress.value,
+        [0, 0.1],
+        [1, 0],
+        Extrapolate.CLAMP
+      ),
+      transform: [
+        {
+          translateX: interpolate2(
+            progress.value,
+            [0, 0.4],
+            [width - size - 8, 0]
+          ),
+        },
+        {
+          translateY: y.value - size / 2,
+        },
+      ],
+    };
+  });
 
   return (
     <Animated.View

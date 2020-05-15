@@ -8,6 +8,7 @@
 
 typedef void (^REAOnAnimationCallback)(CADisplayLink *displayLink);
 typedef void (^REANativeAnimationOp)(RCTUIManager *uiManager);
+typedef void (^REAEventHandler)(NSString *eventName, id<RCTEvent> event);
 
 @interface REANodesManager : NSObject
 
@@ -31,6 +32,7 @@ typedef void (^REANativeAnimationOp)(RCTUIManager *uiManager);
 
 - (void)postOnAnimation:(REAOnAnimationCallback)clb;
 - (void)postRunUpdatesAfterAnimation;
+- (void)registerEventHandler:(REAEventHandler)eventHandler;
 - (void)enqueueUpdateViewOnNativeThread:(nonnull NSNumber *)reactTag
                                viewName:(NSString *) viewName
                             nativeProps:(NSMutableDictionary *)nativeProps;

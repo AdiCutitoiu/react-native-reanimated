@@ -23,7 +23,7 @@ std::shared_ptr<TurboModule> RETurboModuleProvider(const std::string &name, std:
   }
   
   if (name == "NativeReanimated") {
-    return NativeProxyWrapper::createNativeReanimatedModule(jsInvoker);
+    return reanimated::createReanimatedModule(jsInvoker);
   }
 
   return nullptr;

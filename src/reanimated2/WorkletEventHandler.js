@@ -1,27 +1,18 @@
 import NativeModule from './NativeReanimated';
-import Worklet from './Worklet';
 
 export default class WorkletEventHandler {
-  constructor(worklet, sharedValues) {
+  constructor(worklet) {
     this.worklet = worklet;
-    let sharedValueIds = [];
-    for (let sv of sharedValues) {
-      sharedValueIds.push(sv.id);
-    }
-    this.sharedValueIds = sharedValueIds;
-    this.id = Worklet.applierId++;
   }
 
   registerForEvent(viewTag, eventName) {
-    NativeModule.registerEventApplier(
-      this.id,
+    this.registrationId = NativeModule.registerEventHandler(
       viewTag + eventName,
-      this.worklet.id,
-      this.sharedValueIds
+      this.worklet
     );
   }
 
   unregisterFromEvent() {
-    NativeModule.unregisterEventApplier(this.id);
+    NativeModule.unregisterEventHandler(this.registrationId);
   }
 }

@@ -1,107 +1,39 @@
 import { TurboModuleRegistry } from 'react-native';
-import ReanimatedModule from '../ReanimatedModule';
-import { installFunctions, installConstants } from './InstallFunctions';
 
 const InnerNativeModule =
   global.NativeReanimated || TurboModuleRegistry.get('NativeReanimated');
 
-installConstants(InnerNativeModule);
-installFunctions(InnerNativeModule);
-
 export default {
-  // function install
-  workletEval(path, code) {
-    InnerNativeModule.workletEval(path, code);
+  installCoreFunctions(valueSetter) {
+    // may need to add some more methods in the future
+    return InnerNativeModule.installCoreFunctions(valueSetter);
   },
 
-  // shared value
-  registerSharedValue(valueId, value) {
-    InnerNativeModule.registerSharedValue(valueId, value);
+  makeShareable(value) {
+    return InnerNativeModule.makeShareable(value);
   },
 
-  unregisterSharedValue(valueId) {
-    InnerNativeModule.unregisterSharedValue(valueId);
+  makeMutable(value) {
+    return InnerNativeModule.makeMutable(value);
   },
 
-  async getSharedValueAsync(valueId, callback) {
-    return InnerNativeModule.getSharedValueAsync(valueId, callback);
+  makeRemote(object) {
+    return InnerNativeModule.makeRemote(object);
   },
 
-  setSharedValue(valueId, newValue) {
-    InnerNativeModule.setSharedValue(valueId, newValue);
+  startMapper(mapper, inputs = [], outputs = []) {
+    return InnerNativeModule.startMapper(mapper, inputs, outputs);
   },
 
-  connectViewWithValue(viewTag, valueId, propName) {
-    InnerNativeModule.connectViewWithValue(viewTag, valueId, propName);
+  stopMapper(mapperId) {
+    return InnerNativeModule.stopMapper(mapperId);
   },
 
-  disconnectViewFromValue(viewTag, valueId) {
-    InnerNativeModule.disconnectViewFromValue(viewTag, valueId);
+  registerEventHandler(eventHash, eventHandler) {
+    return InnerNativeModule.registerEventHandler(eventHash, eventHandler);
   },
 
-  // worklet
-
-  registerWorklet(workletId, holder) {
-    InnerNativeModule.registerWorklet(
-      workletId,
-      holder.func.asString,
-      holder.func.length
-    );
-  },
-
-  setWorkletListener(workletId, callback) {
-    InnerNativeModule.setWorkletListener(workletId, callback);
-  },
-
-  registerEventApplier(applierId, eventHash, workletID, sharedValues) {
-    InnerNativeModule.registerEventApplier(
-      applierId,
-      eventHash,
-      workletID,
-      sharedValues
-    );
-  },
-
-  unregisterEventApplier(applierId) {
-    InnerNativeModule.unregisterEventApplier(applierId);
-  },
-
-  registerApplier(
-    applierId,
-    workletId,
-    sharedValueIds /* shared values (worklet ID) */
-  ) {
-    InnerNativeModule.registerApplierOnRender(
-      applierId,
-      workletId,
-      sharedValueIds
-    );
-    ReanimatedModule.triggerRender();
-  },
-
-  unregisterApplier(applierId) {
-    InnerNativeModule.unregisterApplierFromRender(applierId);
-  },
-
-  registerMapper(
-    mapperId,
-    workletId,
-    sharedValueIds /* shared values (worklet ID) */
-  ) {
-    InnerNativeModule.registerMapper(mapperId, workletId, sharedValueIds);
-    ReanimatedModule.triggerRender();
-  },
-
-  unregisterMapper(mapperId) {
-    InnerNativeModule.unregisterMapper(mapperId);
-    ReanimatedModule.triggerRender();
-  },
-
-  unregisterWorklet(workletId) {
-    InnerNativeModule.unregisterWorklet(workletId);
-  },
-
-  getRegistersState(option, callback) {
-    InnerNativeModule.getRegistersState(option, callback);
+  unregisterEventHandler(registrationId) {
+    return InnerNativeModule.unregisterEventHandler(registrationId);
   },
 };

@@ -5,10 +5,9 @@ import ReanimatedEventEmitter from './ReanimatedEventEmitter';
 import AnimatedEvent from './core/AnimatedEvent';
 import AnimatedNode from './core/AnimatedNode';
 import { createOrReusePropsNode } from './core/AnimatedProps';
-import Worklet from './reanimated2/Worklet';
+import WorkletEventHandler from './reanimated2/WorkletEventHandler';
 
 import invariant from 'fbjs/lib/invariant';
-import { WorkletEventHandler } from './Animated';
 
 const NODE_MAPPING = new Map();
 
@@ -224,12 +223,12 @@ export default function createAnimatedComponent(Component) {
       const viewTag = findNodeHandle(this);
       styles.forEach(style => {
         if (style && style.viewTag !== undefined) {
-          style.viewTag.set(viewTag);
+          style.viewTag.value = viewTag;
         }
       });
       // attach animatedProps property
       if (this.props.animatedProps) {
-        this.props.animatedProps.viewTag.set(viewTag);
+        this.props.animatedProps.viewTag.value = viewTag;
       }
     }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import {
   Text,
   View,
@@ -7,116 +7,42 @@ import {
   Platform,
   Button,
 } from 'react-native';
-import { createAppContainer } from 'react-navigation';
-import { createStackNavigator } from 'react-navigation-stack';
 
-import Menu from './Menu';
-import DragTest from './testComponents/DragTest';
-import SharedValueTest from './testComponents/SharedValuesTest';
-import NotifyTest from './testComponents/NotifyTest';
-import SpeedTest from './testComponents/SpeedTest';
-import TwoHandlersTest from './testComponents/TwoHandlersTest';
-import CleanupTest from './testComponents/CleanUpTest';
-import SharedFunctionTest from './testComponents/SharedFunctionTest';
-import WorkletsTest from './testComponents/WorkletsTest';
-import SharedArraySharedObject from './testComponents/SharedArraySharedObject';
-import SzymonRotationScreen from './testComponents/SzymonRotationScreen';
-import SzymonRotationWithReset from './testComponents/SzymonRotationWithReset';
-import SzymonStartStopScreen from './testComponents/SzymonStartStopScreen';
-import WorkletFailureTest from './testComponents/WorkletFailureTest';
-import MapperTest from './testComponents/MapperTest';
-import MapperTest2 from './testComponents/MapperTest2';
-import { ScrollView } from 'react-native-gesture-handler';
-import UseAnimatedStyleTest from './testComponents/UseAnimatedStyleTest';
-import WithWorklet from './testComponents/WithWorklet';
-import FunctionInstallTest from './testComponents/FunctionInstallTest';
-import LiquidSwipe from './LiquidSwipe/index';
-import TabBar from './testComponents/TabBar.js';
-import ChatHeads from './testComponents/ChatHeads.js';
+import { withTiming, runOnUI, makeShareable } from 'react-native-reanimated';
 
-// set components here:
-const components = {
-  LiquidSwipe: LiquidSwipe,
-  TabBar: TabBar,
-  '3D Menu': Menu,
-  WithWorklet: WithWorklet,
-  DragTest: DragTest,
-  MapperTest: MapperTest,
-  MapperTest2: MapperTest2,
-  UseAnimatedStyle: UseAnimatedStyleTest,
-  SharedValueTest: SharedValueTest,
-  NotifyTest: NotifyTest,
-  SpeedTest: SpeedTest,
-  TwoHandlersTest: TwoHandlersTest,
-  CleanupTest: CleanupTest,
-  SharedFunctionTest: SharedFunctionTest,
-  WorkletsTest: WorkletsTest,
-  SharedArraySharedObj: SharedArraySharedObject,
-  SzymonRotation: SzymonRotationScreen,
-  SzymonRotationWithReset: SzymonRotationWithReset,
-  SzymonStartStop: SzymonStartStopScreen,
-  WorkletFailureTest: WorkletFailureTest,
-  FunctionInstallTest: FunctionInstallTest,
+const width = 1700;
+
+function callback() {
+  console.log('CALLBAKC');
+}
+
+const thirdWorklet = () => {
+  'worklet';
+  callback();
 };
 
-YellowBox.ignoreWarnings([
-  'Warning: isMounted(...) is deprecated',
-  'Module RCTImageLoader',
-]);
-// refers to bug in React Navigation which should be fixed soon
-// https://github.com/react-navigation/react-navigation/issues/3956
-
-class MainScreen extends React.Component {
-  static navigationOptions = {
-    title: '🎬 Reanimated Examples',
-  };
-
-  render() {
-    return (
-      <View>
-        <Text>Pick the screen:</Text>
-        <ScrollView>
-          {Object.keys(components).map(item => {
-            return (
-              <View style={{ margin: 10 }} key={item}>
-                <Button
-                  title={item}
-                  onPress={() => {
-                    this.props.navigation.navigate(item);
-                  }}
-                />
-              </View>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  }
+function secondWorklet() {
+  'worklet';
+  thirdWorklet();
 }
 
-const screens = {};
-for (let key in components) {
-  screens[key] = {
-    screen: components[key],
-    title: key,
-  };
+function run() {
+  runOnUI(secondWorklet)();
 }
 
-const ExampleApp = createStackNavigator(
-  {
-    MainScreen: { screen: MainScreen },
-    ...screens,
-  },
-  {
-    initialRouteName: 'MainScreen',
-    headerMode: 'screen',
-  }
-);
+const App = () => {
+  return (
+    <View style={{ alignContent: 'center', justifyContent: 'center', flex: 1 }}>
+      <Button title="Yolo" onPress={run} />
+    </View>
+  );
+};
 
-const createApp = Platform.select({
-  web: input => createBrowserApp(input, { history: 'hash' }),
-  default: input => createAppContainer(input),
-});
+// import SzymonStartStop from './testComponents/SzymonStartStopScreen';
+// import DragTest from './testComponents/DragTest';
+import LiquidSwipe from './LiquidSwipe';
 
-export default SzymonStartStopScreen;
+// export default App;
+// export default DragTest;
+export default LiquidSwipe;
 // export default createApp(ExampleApp);

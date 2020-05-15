@@ -5,97 +5,78 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedGestureHandler,
   useDerivedValue,
+  withSpring,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 
-const { width, height } = Dimensions.get('window');
+const { width: windowWidth, height: windowHeight } = Dimensions.get('window');
 
 function ChatHeads({ children }) {
   const transX = useSharedValue(0);
   const transY = useSharedValue(0);
 
-  const gestureHandler = useAnimatedGestureHandler(
-    {
-      onStart: (_, params, ctx) => {
-        'worklet';
-        ctx.startX = params.transX.value;
-        ctx.startY = params.transY.value;
-      },
-      onActive: (event, params, ctx) => {
-        'worklet';
-        params.transX.value = ctx.startX + event.translationX;
-        params.transY.value = ctx.startY + event.translationY;
-      },
-      onEnd: (event, params) => {
-        'worklet';
-        const width = params.width.value - 100 - 40; // minus margins & width
-        const height = params.height.value - 100 - 40; // minus margins & height
-        const toss = 0.2;
-        function clamp(value, min, max) {
-          return Math.min(Math.max(value, min), max);
-        }
-        const targetX = clamp(
-          params.transX.value + toss * event.velocityX,
-          0,
-          width
-        );
-        const targetY = clamp(
-          params.transY.value + toss * event.velocityY,
-          0,
-          height
-        );
-
-        const top = targetY;
-        const bottom = height - targetY;
-        const left = targetX;
-        const right = width - targetX;
-        const minDistance = Math.min(top, bottom, left, right);
-        let snapX = targetX;
-        let snapY = targetY;
-        switch (minDistance) {
-          case top:
-            snapY = 0;
-            break;
-          case bottom:
-            snapY = height;
-            break;
-          case left:
-            snapX = 0;
-            break;
-          case right:
-            snapX = width;
-            break;
-        }
-        params.transX.value = Reanimated.withSpring(snapX, {
-          velocity: event.velocityX,
-        });
-        params.transY.value = Reanimated.withSpring(snapY, {
-          velocity: event.velocityY,
-        });
-      },
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx) => {
+      ctx.startX = transX.value;
+      ctx.startY = transY.value;
     },
-    { transX, transY, width, height }
-  );
-
-  const stylez = useAnimatedStyle(
-    ({ transX, transY }) => {
-      'worklet';
-      return {
-        transform: [
-          {
-            translateX: transX,
-          },
-          {
-            translateY: transY,
-          },
-        ],
-      };
+    onActive: (event, ctx) => {
+      transX.value = ctx.startX + event.translationX;
+      transY.value = ctx.startY + event.translationY;
     },
-    {
-      transX,
-      transY,
-    }
-  );
+    onEnd: event => {
+      const width = windowWidth - 100 - 40; // minus margins & width
+      const height = windowHeight - 100 - 40; // minus margins & height
+      const toss = 0.2;
+      function clamp(value, min, max) {
+        return Math.min(Math.max(value, min), max);
+      }
+      const targetX = clamp(transX.value + toss * event.velocityX, 0, width);
+      const targetY = clamp(transY.value + toss * event.velocityY, 0, height);
+      // return;
+
+      const top = targetY;
+      const bottom = height - targetY;
+      const left = targetX;
+      const right = width - targetX;
+      const minDistance = Math.min(top, bottom, left, right);
+      let snapX = targetX;
+      let snapY = targetY;
+      switch (minDistance) {
+        case top:
+          snapY = 0;
+          break;
+        case bottom:
+          snapY = height;
+          break;
+        case left:
+          snapX = 0;
+          break;
+        case right:
+          snapX = width;
+          break;
+      }
+      transX.value = withSpring(snapX, {
+        velocity: event.velocityX,
+      });
+      transY.value = withSpring(snapY, {
+        velocity: event.velocityY,
+      });
+    },
+  });
+
+  const stylez = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: transX.value,
+        },
+        {
+          translateY: transY.value,
+        },
+      ],
+    };
+  });
 
   const childrenArray = React.Children.toArray(children);
 
@@ -120,40 +101,25 @@ function ChatHeads({ children }) {
 }
 
 function Followers({ transX, transY, children }) {
-  const myTransX = useDerivedValue(
-    ({ transX }) => {
-      'worklet';
-      return Reanimated.withSpring(transX);
-    },
-    { transX }
-  );
-  const myTransY = useDerivedValue(
-    ({ transY }) => {
-      'worklet';
-      return Reanimated.withSpring(transY);
-    },
-    { transY }
-  );
+  const myTransX = useDerivedValue(() => {
+    return withSpring(transX.value);
+  });
+  const myTransY = useDerivedValue(() => {
+    return withSpring(transY.value);
+  });
 
-  const stylez = useAnimatedStyle(
-    ({ myTransX, myTransY }) => {
-      'worklet';
-      return {
-        transform: [
-          {
-            translateX: myTransX,
-          },
-          {
-            translateY: myTransY,
-          },
-        ],
-      };
-    },
-    {
-      myTransX,
-      myTransY,
-    }
-  );
+  const stylez = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: myTransX.value,
+        },
+        {
+          translateY: myTransY.value,
+        },
+      ],
+    };
+  });
 
   const childrenArray = React.Children.toArray(children);
 

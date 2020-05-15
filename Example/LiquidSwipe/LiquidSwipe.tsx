@@ -3,6 +3,10 @@ import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedGestureHandler,
+  cancelAnimation,
+  interpolate2,
+  Extrapolate,
+  withSpring,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
 import Weave from './Weave';
@@ -28,60 +32,48 @@ export default () => {
   const centerY = useSharedValue(initialWaveCenter);
   const progress = useSharedValue(0);
 
-  const handler = useAnimatedGestureHandler(
-    {
-      onStart: (event, inputs, ctx) => {
-        'worklet';
-        // stop animating progress, this will also place "isBack" value in the
-        // final state (we update isBack in progress animation callback)
-        Reanimated.cancelAnimation(inputs.progress);
-        ctx.dragX = 0;
-        ctx.startY = inputs.isBack.value ? event.y : inputs.centerY.value;
-      },
-      onActive: (event, inputs, ctx) => {
-        'worklet';
-        const { centerY, isBack, progress } = inputs;
-        centerY.value = ctx.startY + event.translationY;
-        if (isBack.value) {
-          progress.value = Reanimated.interpolate(
-            event.translationX,
-            [0, inputs.maxDist.value],
-            [1, 0],
-            Extrapolate.CLAMP
-          );
-        } else {
-          progress.value = Reanimated.interpolate(
-            event.translationX,
-            [-inputs.maxDist.value, 0],
-            [0.4, 0],
-            Extrapolate.CLAMP
-          );
-        }
-      },
-      onEnd: (event, inputs, ctx) => {
-        'worklet';
-        const { initialWaveCenter, isBack, centerY, progress } = inputs;
-        let goBack;
-        if (isBack.value) {
-          goBack = progress.value > 0.5 ? 1 : 0;
-        } else {
-          // TODO: want to use a boolean here
-          goBack = progress.value > 0.2 ? 1 : 0;
-        }
-        centerY.value = Reanimated.withSpring(initialWaveCenter.value);
-        progress.value = Reanimated.withSpring(goBack ? 1 : 0, {}, () => {
-          isBack.value = goBack;
-        });
-      },
+  const maxDist = width - initialSideWidth;
+
+  const handler = useAnimatedGestureHandler({
+    onStart: (event, ctx) => {
+      // stop animating progress, this will also place "isBack" value in the
+      // final state (we update isBack in progress animation callback)
+      cancelAnimation(progress);
+      ctx.dragX = 0;
+      ctx.startY = isBack.value ? event.y : centerY.value;
     },
-    {
-      progress,
-      centerY,
-      initialWaveCenter,
-      isBack,
-      maxDist: width - initialSideWidth,
-    }
-  );
+    onActive: (event, ctx) => {
+      centerY.value = ctx.startY + event.translationY;
+      if (isBack.value) {
+        progress.value = interpolate2(
+          event.translationX,
+          [0, maxDist],
+          [1, 0],
+          Extrapolate.CLAMP
+        );
+      } else {
+        progress.value = interpolate2(
+          event.translationX,
+          [-maxDist, 0],
+          [0.4, 0],
+          Extrapolate.CLAMP
+        );
+      }
+    },
+    onEnd: () => {
+      let goBack;
+      if (isBack.value) {
+        goBack = progress.value > 0.5 ? 1 : 0;
+      } else {
+        // TODO: want to use a boolean here
+        goBack = progress.value > 0.2 ? 1 : 0;
+      }
+      centerY.value = withSpring(initialWaveCenter);
+      progress.value = withSpring(goBack ? 1 : 0, {}, () => {
+        isBack.value = goBack;
+      });
+    },
+  });
 
   return (
     <View style={styles.container}>

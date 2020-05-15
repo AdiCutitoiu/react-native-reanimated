@@ -6,6 +6,10 @@ import ReanimatedModule from '../ReanimatedModule';
 export default class SharedValue extends AnimatedNode {
   static idCounter = 0;
 
+  static create(value) {
+    return NativeModule.createSharedValue(value);
+  }
+
   constructor(value, data) {
     const newId = SharedValue.idCounter++;
     super(
@@ -53,63 +57,6 @@ export default class SharedValue extends AnimatedNode {
 
   toString() {
     return `AnimatedValue, id: ${this.__nodeID}`;
-  }
-
-  static create(value) {
-    console.log('create sv ' + JSON.stringify(value));
-    let data = null;
-
-    if (value.isWorklet) {
-      const argIds = [];
-      for (let arg of value.args) {
-        argIds.push(arg.id);
-      }
-      value = {
-        workletId: value.body.id,
-        isWorklet: true,
-        argIds,
-      };
-    } else if (value instanceof Worklet) {
-      data = value.body;
-
-      value = {
-        workletId: value.id,
-        isFunction: true,
-      };
-    } else if (Array.isArray(value)) {
-      data = value;
-      const argIds = [];
-      for (let arg of value) {
-        argIds.push(arg.id);
-      }
-      value = {
-        isArray: true,
-        argIds,
-      };
-    } else if (typeof value === 'object') {
-      const propNames = [];
-      const ids = [];
-      for (let prop in value) {
-        propNames.push(prop);
-        ids.push(value[prop].id);
-      }
-      const initValue = {
-        isObject: true,
-        propNames,
-        ids,
-      };
-
-      const sv = new SharedValue(initValue);
-
-      for (let prop in value) {
-        if (!sv[prop]) {
-          sv[prop] = value[prop];
-        }
-      }
-      return sv;
-    }
-
-    return new SharedValue(value, data);
   }
 
   generateUid() {

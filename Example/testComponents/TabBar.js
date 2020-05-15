@@ -3,6 +3,10 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   useDerivedValue,
+  interpolate2,
+  Extrapolate,
+  delay,
+  withTiming,
 } from 'react-native-reanimated';
 import {
   View,
@@ -92,30 +96,26 @@ function Button({
   position,
   indicatorPosition,
 }) {
-  const staticIconStyle = useAnimatedStyle(
-    ({ position, indicatorPosition, width }) => {
-      'worklet';
-      const visibility = Reanimated.interpolate(
-        indicatorPosition,
-        [
-          position - width / 2,
-          position - width / 8,
-          position + width / 8,
-          position + width / 2,
-        ],
-        [1, 0, 0, 1],
-        Extrapolate.CLAMP
-      );
-      return {
-        opacity: visibility,
-        transform: [{ translateY: 10 * (1 - visibility) }],
-      };
-    },
-    { position, indicatorPosition, width }
-  );
+  const staticIconStyle = useAnimatedStyle(() => {
+    const visibility = interpolate2(
+      indicatorPosition.value,
+      [
+        position - width / 2,
+        position - width / 8,
+        position + width / 8,
+        position + width / 2,
+      ],
+      [1, 0, 0, 1],
+      Extrapolate.CLAMP
+    );
+    return {
+      opacity: visibility,
+      transform: [{ translateY: 10 * (1 - visibility) }],
+    };
+  });
 
   return (
-    <TouchableWithoutFeedback onPress={() => activeIndex.set(index)}>
+    <TouchableWithoutFeedback onPress={() => (activeIndex.value = index)}>
       <View style={styles.tab}>
         <Animated.View style={staticIconStyle}>
           <FontAwesomeIcon icon={item} color="black" size={25} />
@@ -126,24 +126,17 @@ function Button({
 }
 
 function ActiveIcon({ item, index, activeIndex, width }) {
-  const circleIconStyle = useAnimatedStyle(
-    ({ index, activeIndex }) => {
-      'worklet';
-      const isActive = index === activeIndex;
-      const yOffset = isActive ? 0 : 80;
-      return {
-        transform: [
-          {
-            translateY: Reanimated.delay(
-              isActive ? 150 : 0,
-              Reanimated.withTiming(yOffset)
-            ),
-          },
-        ],
-      };
-    },
-    { activeIndex, index }
-  );
+  const circleIconStyle = useAnimatedStyle(() => {
+    const isActive = index === activeIndex.value;
+    const yOffset = isActive ? 0 : 80;
+    return {
+      transform: [
+        {
+          translateY: delay(isActive ? 150 : 0, withTiming(yOffset)),
+        },
+      ],
+    };
+  });
 
   return (
     <Animated.View
@@ -170,25 +163,17 @@ function ActiveIcon({ item, index, activeIndex, width }) {
 const Bar = () => {
   const activeIndex = useSharedValue(0);
 
-  const indicatorPosition = useDerivedValue(
-    ({ activeIndex, tabWidth }) => {
-      'worklet';
-      return Reanimated.withTiming(activeIndex * tabWidth + tabWidth / 2, {
-        duration: 500,
-      });
-    },
-    { activeIndex, tabWidth }
-  );
+  const indicatorPosition = useDerivedValue(() => {
+    return withTiming(activeIndex.value * tabWidth + tabWidth / 2, {
+      duration: 500,
+    });
+  });
 
-  const indicatorStyle = useAnimatedStyle(
-    input => {
-      'worklet';
-      return {
-        transform: [{ translateX: input.indicatorPosition }],
-      };
-    },
-    { indicatorPosition }
-  );
+  const indicatorStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: indicatorPosition.value }],
+    };
+  });
 
   return (
     <View style={styles.container}>

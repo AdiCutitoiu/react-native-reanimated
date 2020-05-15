@@ -2,58 +2,44 @@ import React from 'react';
 import { Text, View, Dimensions } from 'react-native';
 import Animated, {
   useSharedValue,
-  useWorklet,
-  useEventWorklet,
+  useEvent,
+  withSpring,
   useAnimatedStyle,
   useAnimatedGestureHandler,
 } from 'react-native-reanimated';
 import { PanGestureHandler } from 'react-native-gesture-handler';
-import ReanimatedModule from '../../src/ReanimatedModule';
 
 function DragTest() {
   const transX = useSharedValue(0);
   const transY = useSharedValue(0);
 
-  const gestureHandler = useAnimatedGestureHandler(
-    {
-      onStart: (_, params, ctx) => {
-        'worklet';
-        ctx.startX = params.transX.value;
-        ctx.startY = params.transY.value;
-      },
-      onActive: (event, params, ctx) => {
-        'worklet';
-        params.transX.value = ctx.startX + event.translationX;
-        params.transY.value = ctx.startY + event.translationY;
-      },
-      onEnd: (_, params) => {
-        'worklet';
-        params.transX.value = Reanimated.withSpring(0);
-        params.transY.value = Reanimated.withSpring(0);
-      },
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, ctx) => {
+      ctx.startX = transX.value;
+      ctx.startY = transY.value;
     },
-    { transX, transY }
-  );
+    onActive: (event, ctx) => {
+      transX.value = ctx.startX + event.translationX;
+      transY.value = ctx.startY + event.translationY;
+    },
+    onEnd: _ => {
+      transX.value = withSpring(0);
+      transY.value = withSpring(0);
+    },
+  });
 
-  const stylez = useAnimatedStyle(
-    ({ transX, transY }) => {
-      'worklet';
-      return {
-        transform: [
-          {
-            translateX: transX,
-          },
-          {
-            translateY: transY,
-          },
-        ],
-      };
-    },
-    {
-      transX,
-      transY,
-    }
-  );
+  const stylez = useAnimatedStyle(() => {
+    return {
+      transform: [
+        {
+          translateX: transX.value,
+        },
+        {
+          translateY: transY.value,
+        },
+      ],
+    };
+  });
 
   return (
     <View style={{ flex: 1, margin: 50 }}>

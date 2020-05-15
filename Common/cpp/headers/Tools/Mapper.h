@@ -1,40 +1,35 @@
-//
-//  Mapper.hpp
-//  DoubleConversion
-//
-//  Created by Szymon Kapala on 20/03/2020.
-//
-
 #ifndef Mapper_h
 #define Mapper_h
 
 #include <stdio.h>
-#include "Applier.h"
-#include "SharedValueRegistry.h"
+#include <jsi/jsi.h>
+#include "Shareable.h"
+#include "NativeReanimatedModule.h"
+
+namespace reanimated {
 
 using namespace facebook;
 
+class MapperRegistry;
+
 class Mapper {
-  std::shared_ptr<Applier> applier;
-  std::shared_ptr<SharedValueRegistry> sharedValueRegistry;
-public:
+  friend MapperRegistry;
+private:
+  jsi::Function mapper;
+  std::vector<std::shared_ptr<MutableValue>> inputs;
+  std::vector<std::shared_ptr<MutableValue>> outputs;
+  unsigned long id;
   bool dirty = true;
-  Mapper(int id,
-          std::shared_ptr<SharedValueRegistry> sharedValueRegistry,
-          std::shared_ptr<Applier> applier,
-          std::vector<int> inputIds,
-          std::vector<int> outputIds
-         );
-  void execute(jsi::Runtime &rt, std::shared_ptr<BaseWorkletModule> module);
-  static std::shared_ptr<Mapper> createMapper(int id,
-                                       std::shared_ptr<Applier> applier,
-                                       std::shared_ptr<SharedValueRegistry> sharedValueRegistry);
-  virtual ~Mapper();
-  
-  std::vector<int> inputIds;
-  std::vector<int> outputIds;
-  int id;
-  bool initialized = false;
+
+public:
+  Mapper(NativeReanimatedModule *module,
+         unsigned long id,
+         jsi::Function &&mapper,
+         std::vector<std::shared_ptr<MutableValue>> inputs,
+         std::vector<std::shared_ptr<MutableValue>> outputs);
+  void execute(jsi::Runtime &rt);
 };
+
+}
 
 #endif /* Mapper_h */

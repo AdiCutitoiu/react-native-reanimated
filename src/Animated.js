@@ -66,25 +66,7 @@ export default Animated;
 export * from './base';
 export * from './derived';
 
-import Worklet from './reanimated2/Worklet';
-import SharedValue from './reanimated2/SharedValue';
-import WorkletEventHandler from './reanimated2/WorkletEventHandler';
-
-import {
-  useWorklet,
-  useEventWorklet,
-  useDerivedValue,
-  useAnimatedEventHandler,
-  useAnimatedGestureHandler,
-  useAnimatedProcessor,
-  useSharedValue,
-  useMapper,
-  useAnimatedStyle,
-  useAnimatedProps,
-  install,
-} from './reanimated2/Hooks';
-import RegistersState from './reanimated2/RegistersState';
-import useSpring from './reanimated2/helpingHooks/Spring';
+export * from './reanimated2';
 
 export {
   Easing,
@@ -100,21 +82,4 @@ export {
   timingWrapper as timing,
   springWrapper as spring,
   SpringUtils,
-  // Reanimated 2.0
-  Worklet,
-  SharedValue,
-  WorkletEventHandler,
-  useWorklet,
-  useEventWorklet,
-  useDerivedValue,
-  useAnimatedProps,
-  useAnimatedEventHandler,
-  useAnimatedProcessor,
-  useAnimatedGestureHandler,
-  useMapper,
-  useSharedValue,
-  useAnimatedStyle,
-  RegistersState,
-  useSpring,
-  install,
 };

@@ -22,9 +22,6 @@
 #import "Nodes/REAParamNode.h"
 #import "Nodes/REAFunctionNode.h"
 #import "Nodes/REACallFuncNode.h"
-#import "Nodes/REASharedValueNode.h"
-
-#import "native/NativeProxy.h"
 
 @interface RCTUIManager ()
 
@@ -65,6 +62,7 @@
   BOOL _processingDirectEvent;
   NSMutableArray<REAOnAnimationCallback> *_onAnimationCallbacks;
   NSMutableArray<REANativeAnimationOp> *_operationsInBatch;
+  REAEventHandler _eventHandler;
 }
 
 - (instancetype)initWithModule:(REAModule *)reanimatedModule
@@ -86,6 +84,7 @@
 
 - (void)invalidate
 {
+  _eventHandler = nil;
   [self stopUpdatingOnAnimationFrame];
 }
 
@@ -122,6 +121,11 @@
   }
 }
 
+- (void)registerEventHandler:(REAEventHandler)eventHandler
+{
+  _eventHandler = eventHandler;
+}
+
 - (void)startUpdatingOnAnimationFrame
 {
   if (!_displayLink) {
@@ -148,11 +152,7 @@
 - (void)onAnimationFrame:(CADisplayLink *)displayLink
 {
   _currentAnimationTimestamp = _displayLink.timestamp;
-  NSArray<NSArray*> *changedSharedValues = [NativeProxy getChangedSharedValuesAfterRender:_currentAnimationTimestamp];
-  for (NSArray *sv in changedSharedValues) {
-    [REASharedValueNode setSharedValue:sv[0] newValue:sv[1]];
-  }
-  
+
   // We process all enqueued events first
   for (NSUInteger i = 0; i < _eventQueue.count; i++) {
     id<RCTEvent> event = _eventQueue[i];
@@ -172,7 +172,7 @@
 
   [self performOperations];
 
-  if (_onAnimationCallbacks.count == 0 && (![NativeProxy shouldRerender])) {
+  if (_onAnimationCallbacks.count == 0) {
     [self stopUpdatingOnAnimationFrame];
   }
 }
@@ -243,8 +243,7 @@
             @"concat": [REAConcatNode class],
             @"param": [REAParamNode class],
             @"func": [REAFunctionNode class],
-            @"callfunc": [REACallFuncNode class],
-            @"shared": [REASharedValueNode class]
+            @"callfunc": [REACallFuncNode class]
 //            @"listener": nil,
             };
   });
@@ -394,17 +393,9 @@
   NSString *eventHash = [NSString stringWithFormat:@"%@%@",
   event.viewTag,
   event.eventName];
-  
-  if ([NativeProxy shouldEventBeHijacked:eventHash]) {
-    NSArray<NSArray*> *changedSharedValues = [NativeProxy getChangedSharedValuesAfterEvent:eventHash event:event];
-    for (NSArray *sv in changedSharedValues) {
-      [REASharedValueNode setSharedValue:sv[0] newValue:sv[1]];
-    }
-    
-    if ([NativeProxy shouldRerender]) {
-      [self postRunUpdatesAfterAnimation];
-    }
-    return;
+
+  if (_eventHandler != nil) {
+    _eventHandler(eventHash, event);
   }
   
   REANode *eventNode = [_eventMapping objectForKey:key];

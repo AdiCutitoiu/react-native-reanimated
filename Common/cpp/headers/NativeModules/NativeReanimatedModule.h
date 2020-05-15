@@ -6,75 +6,64 @@
 
 #include "NativeReanimatedModuleSpec.h"
 #include "Scheduler.h"
-#include "WorkletRegistry.h"
-#include "SharedValueRegistry.h"
-#include "SharedValue.h"
-#include "SharedDouble.h"
-#include "SharedString.h"
-#include "WorkletModule.h"
-#include "ApplierRegistry.h"
 #include "ErrorHandler.h"
-#include "SharedFunction.h"
-#include "SharedArray.h"
-#include "SharedObject.h"
-#include "MapperRegistry.h"
 
 #include <unistd.h>
 
-namespace facebook {
-namespace react {
+namespace reanimated {
+
+using FrameCallback = std::function<void(double)>;
+
+class ShareableValue;
+class MapperRegistry;
+class EventHandlerRegistry;
 
 class NativeReanimatedModule : public NativeReanimatedModuleSpec {
-  public:
-    NativeReanimatedModule(
-      std::unique_ptr<jsi::Runtime> rt,
-      std::shared_ptr<ApplierRegistry> ar,
-      std::shared_ptr<SharedValueRegistry> svr,
-      std::shared_ptr<WorkletRegistry> wr,
-      std::shared_ptr<Scheduler> scheduler,
-      std::shared_ptr<MapperRegistry> mapperRegistry,
-      std::shared_ptr<JSCallInvoker> jsInvoker,
-      std::shared_ptr<ErrorHandler> errorHandler);
-    virtual ~NativeReanimatedModule();
-    void workletEval(jsi::Runtime &rt, std::string path, std::string code) override;
-    void registerWorklet(jsi::Runtime &rt, double id, std::string functionAsString, int length) override;
-    void unregisterWorklet(jsi::Runtime &rt, double id) override;
-    void setWorkletListener(jsi::Runtime &rt, int workletId, const jsi::Value &listener) override;
-
-    void registerSharedValue(jsi::Runtime &rt, double id, const jsi::Value &value) override;
-    void unregisterSharedValue(jsi::Runtime &rt, double id) override;
-    void getSharedValueAsync(jsi::Runtime &rt, double id, const jsi::Value &value) override;
-    void setSharedValue(jsi::Runtime &rt, double id, const jsi::Value &value) override;
-    void updateSharedValueRegistry(jsi::Runtime &rt, int id, const jsi::Value &value, bool setVal);
-
-    void registerApplierOnRender(jsi::Runtime &rt, int id, int workletId, std::vector<int> svIds) override;
-    void unregisterApplierFromRender(jsi::Runtime &rt, int id) override;
-    void registerApplierOnEvent(jsi::Runtime &rt, int id, std::string eventName, int workletId, std::vector<int> svIds) override;
-    void unregisterApplierFromEvent(jsi::Runtime &rt, int id) override;
+  friend ShareableValue;
   
-    virtual void registerMapper(jsi::Runtime &rt, int id, int workletId, std::vector<int> svIds) override;
-    virtual void unregisterMapper(jsi::Runtime &rt, int id) override;
+  public:
+    NativeReanimatedModule(std::shared_ptr<JSCallInvoker> jsInvoker,
+                           std::shared_ptr<Scheduler> scheduler,
+                           std::unique_ptr<jsi::Runtime> rt,
+                           std::function<void(std::function<void(double)>)> requestRender,
+                           std::function<void(jsi::Runtime&, int, const jsi::Object&)> propUpdater);
+    virtual ~NativeReanimatedModule();
 
-    void render(double timestampMs);
+    void installCoreFunctions(jsi::Runtime &rt, const jsi::Value &valueSetter) override;
+
+    jsi::Value makeShareable(jsi::Runtime &rt, const jsi::Value &value) override;
+    jsi::Value makeMutable(jsi::Runtime &rt, const jsi::Value &value) override;
+    jsi::Value makeRemote(jsi::Runtime &rt, const jsi::Value &value) override;
+
+    jsi::Value startMapper(jsi::Runtime &rt, const jsi::Value &worklet, const jsi::Value &inputs, const jsi::Value &outputs) override;
+    void stopMapper(jsi::Runtime &rt, const jsi::Value &mapperId) override;
+
+    jsi::Value registerEventHandler(jsi::Runtime &rt, const jsi::Value &eventHash, const jsi::Value &worklet) override;
+    void unregisterEventHandler(jsi::Runtime &rt, const jsi::Value &registrationId) override;
+
+    void onRender(double timestampMs);
     void onEvent(std::string eventName, std::string eventAsString);
 
+    void maybeRequestRender();
+
+    bool isUIRuntime(jsi::Runtime &rt);
+    bool isHostRuntime(jsi::Runtime &rt);
+
+    std::shared_ptr<ShareableValue> valueSetter;
+
+  private:
     std::unique_ptr<jsi::Runtime> runtime;
-    std::shared_ptr<WorkletRegistry> workletRegistry;
     std::shared_ptr<MapperRegistry> mapperRegistry;
-    std::shared_ptr<ApplierRegistry> applierRegistry;
-    std::shared_ptr<SharedValueRegistry> sharedValueRegistry;
+    std::shared_ptr<EventHandlerRegistry> eventHandlerRegistry;
     std::shared_ptr<ErrorHandler> errorHandler;
-private:
-    std::shared_ptr<Scheduler> scheduler;
     std::shared_ptr<jsi::Value> dummyEvent;
-    std::shared_ptr<BaseWorkletModule> workletModule;
-public:
-    /*
-      used for tests
-    */
-    void getRegistersState(jsi::Runtime &rt, int option, const jsi::Value &value) override;
+    std::function<void(FrameCallback)> requestRender;
+    std::vector<FrameCallback> frameCallbacks;
+    bool renderRequested = false;
+  public:
+    std::shared_ptr<Scheduler> scheduler;
 };
 
 }
-}
+
 #endif //REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULE_H

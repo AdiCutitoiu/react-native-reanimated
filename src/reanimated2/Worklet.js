@@ -10,6 +10,7 @@ export default class Worklet {
     }
     this.id = Worklet.idCounter++;
     this.func = func;
+    console.log('REGISTR', this.id, func.asString);
     NativeModule.registerWorklet(this.id, this);
     return this;
   }

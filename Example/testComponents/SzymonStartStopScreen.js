@@ -1,54 +1,48 @@
 import Animated, {
   useSharedValue,
-  useWorklet,
-  useEventWorklet,
   useMapper,
-  Worklet,
+  withTiming as _withTiming,
+  withSpring as _withSpring,
+  delay as _delay,
+  loop as _loop,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { View, Button } from 'react-native';
 import React, { useState, useRef } from 'react';
 
+const wtf = { a: 1 };
+
+const withTiming = _withTiming;
+const withSpring = _withSpring;
+const delay = _delay;
+const loop = _loop;
+
 export default function RotatingSquare(props) {
-  const randomWidth = useSharedValue(10);
+  // const randomWidth = useSharedValue(10);
   // const randomTranslate = useSharedValue(100);
-  const randomOpacity = useSharedValue(50);
-  const anything = useSharedValue(1);
+  // const randomOpacity = useSharedValue(50);
+  // const anything = useSharedValue(1);
+  const [enabled, setEnabled] = useState(false);
 
-  const style = useAnimatedStyle(
-    input => {
-      'worklet';
-      const { randomWidth, randomTranslate } = input;
-      const { randomOpacity } = input;
+  // const style = useAnimatedStyle(() => {
+  //   'worklet';
+  //   return {
+  //     width: enabled ? 300 : 100,
+  //   };
+  // });
 
-      return {
-        // transform: [
-        //   {
-        //     translateX: Reanimated.withSpring(randomTranslate),
-        //   },
-        // ],
-        width: Reanimated.delay(500, Reanimated.withSpring(randomWidth)),
-        // opacity: randomOpacity,
-      };
-    },
-    { randomWidth }
-    // { randomWidth, randomTranslate }
-  );
+  const ss = useSharedValue(20);
 
-  // const mapper = useMapper(
-  //   (input, output) => {
-  //     'worklet';
-  //     // output.randomOpacity.value = Reanimated.delay(
-  //     //   500,
-  //     //   Reanimated.withTiming(Math.random() * 540)
-  //     // );
-  //     output.randomOpacity.value = Reanimated.loop(
-  //       Reanimated.withSpring(Math.random() * 300)
-  //     );
-  //   },
-  //   [{ anything }, { randomOpacity }]
-  // );
-  // mapper();
+  // useMapper(() => {
+  //   'worklet';
+  //   _log('mapper ' + ss.value);
+  // }, [ss]);
+  const style = useAnimatedStyle(() => {
+    'worklet';
+    return {
+      width: loop(withTiming(ss.value)),
+    };
+  });
 
   return (
     <View
@@ -67,8 +61,9 @@ export default function RotatingSquare(props) {
       <Button
         title="toggle"
         onPress={() => {
+          ss.value = Math.random() * 200 + 20;
           // randomTranslate.set(Math.random() * 200);
-          randomWidth.set(Math.random() * 350);
+          // randomWidth.set(Math.random() * 350);
           // anything.set(Math.random());
         }}
       />

@@ -1,260 +1,108 @@
 #include "NativeReanimatedModuleSpec.h"
 
-namespace facebook {
-namespace react {
+namespace reanimated {
 
-// function install
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_workletEval(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->workletEval(
-          rt,
-          args[0].asString(rt).utf8(rt),
-          args[1].asString(rt).utf8(rt));
-  return jsi::Value::undefined();
-}
-
-// worklets
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerWorklet(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->registerWorklet(
-          rt, std::move(args[0].getNumber()),
-                        args[1].asString(rt).utf8(rt),
-                        (int)args[2].asNumber());
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterWorklet(
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_installCoreFunctions(
     jsi::Runtime &rt,
     TurboModule &turboModule,
     const jsi::Value *args,
     size_t count) {
   static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->unregisterWorklet(
-                          rt,
-                          std::move(args[0].getNumber()));
-  return jsi::Value::undefined();
-}
-
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_setWorkletListener(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->setWorkletListener(
-          rt,
-          (int)args[0].getNumber(),
-          std::move(args[1]));
-          
+    ->installCoreFunctions(rt, std::move(args[0]));
   return jsi::Value::undefined();
 }
 
 // SharedValue
 
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerSharedValue(
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_makeShareable(
+    jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const jsi::Value *args,
+    size_t count) {
+  return static_cast<NativeReanimatedModuleSpec *>(&turboModule)
+    ->makeShareable(rt, std::move(args[0]));
+}
+
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_makeMutable(
+    jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const jsi::Value *args,
+    size_t count) {
+  return static_cast<NativeReanimatedModuleSpec *>(&turboModule)
+    ->makeMutable(rt, std::move(args[0]));
+}
+
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_makeRemote(
+    jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const jsi::Value *args,
+    size_t count) {
+  return static_cast<NativeReanimatedModuleSpec *>(&turboModule)
+    ->makeRemote(rt, std::move(args[0]));
+}
+
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_startMapper(
+    jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const jsi::Value *args,
+    size_t count) {
+  return static_cast<NativeReanimatedModuleSpec *>(&turboModule)
+      ->startMapper(rt, std::move(args[0]), std::move(args[1]), std::move(args[2]));
+}
+
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_stopMapper(
     jsi::Runtime &rt,
     TurboModule &turboModule,
     const jsi::Value *args,
     size_t count) {
   static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->registerSharedValue(
-          rt, std::move(args[0].getNumber()), std::move(args[1]));
+      ->stopMapper(rt, std::move(args[0]));
   return jsi::Value::undefined();
 }
 
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterSharedValue(
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerEventHandler(
+    jsi::Runtime &rt,
+    TurboModule &turboModule,
+    const jsi::Value *args,
+    size_t count) {
+  return static_cast<NativeReanimatedModuleSpec *>(&turboModule)
+      ->registerEventHandler(rt, std::move(args[0]), std::move(args[1]));
+}
+
+static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterEventHandler(
     jsi::Runtime &rt,
     TurboModule &turboModule,
     const jsi::Value *args,
     size_t count) {
   static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->unregisterSharedValue(
-          rt, std::move(args[0].getNumber()));
+      ->unregisterEventHandler(rt, std::move(args[0]));
   return jsi::Value::undefined();
 }
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_setSharedValue(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->setSharedValue(
-          rt, std::move(args[0].getNumber()), std::move(args[1]));
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_getSharedValueAsync(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-    static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->getSharedValueAsync(
-          rt, std::move(args[0].getNumber()), std::move(args[1]));
-    return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerApplierOnRender(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  std::vector<int> svIds;
-  jsi::Array ar = args[2].getObject(rt).asArray(rt);
-  for (int i = 0; i < ar.length(rt); ++i) {
-    int svId = (int)(ar.getValueAtIndex(rt, i).getNumber());
-    svIds.push_back(svId);
-  }
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->registerApplierOnRender(
-          rt, (int)args[0].getNumber(), (int)args[1].getNumber(), svIds);
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterApplierFromRender(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->unregisterApplierFromRender(
-          rt, (int)args[0].getNumber());
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerMapper(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  std::vector<int> svIds;
-  jsi::Array ar = args[2].getObject(rt).asArray(rt);
-  for (int i = 0; i < ar.length(rt); ++i) {
-    int svId = (int)(ar.getValueAtIndex(rt, i).getNumber());
-    svIds.push_back(svId);
-  }
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->registerMapper(
-          rt, (int)args[0].getNumber(), (int)args[1].getNumber(), svIds);
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterMapper(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->unregisterMapper(
-          rt, (int)args[0].getNumber());
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_registerEventApplier(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-
-  std::vector<int> svIds;
-  jsi::Array ar = args[3].getObject(rt).asArray(rt);
-  for (int i = 0; i < ar.length(rt); ++i) {
-    int svId = (int)(ar.getValueAtIndex(rt, i).getNumber());
-    svIds.push_back(svId);
-  }
-
-  std::string eventName = args[1].getString(rt).utf8(rt);
-
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->registerApplierOnEvent(
-          rt, (int)args[0].getNumber(), eventName, (int)args[2].getNumber(), svIds);
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_unregisterEventApplier(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->unregisterApplierFromEvent(
-          rt, (int)args[0].getNumber());
-  return jsi::Value::undefined();
-}
-
-static jsi::Value __hostFunction_NativeReanimatedModuleSpec_getRegistersState(
-    jsi::Runtime &rt,
-    TurboModule &turboModule,
-    const jsi::Value *args,
-    size_t count) {
-  static_cast<NativeReanimatedModuleSpec *>(&turboModule)
-      ->getRegistersState(
-          rt,
-          (int)args[0].getNumber(),
-          std::move(args[1]));
-  return jsi::Value::undefined();
-}
-
 
 NativeReanimatedModuleSpec::NativeReanimatedModuleSpec(std::shared_ptr<JSCallInvoker> jsInvoker)
     : TurboModule("NativeReanimated", jsInvoker) {
+  methodMap_["installCoreFunctions"] = MethodMetadata{
+    1, __hostFunction_NativeReanimatedModuleSpec_installCoreFunctions};
 
-  methodMap_["workletEval"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_workletEval};
 
-  methodMap_["registerWorklet"] = MethodMetadata{
-      3, __hostFunction_NativeReanimatedModuleSpec_registerWorklet};
-  methodMap_["unregisterWorklet"] = MethodMetadata{
-      1, __hostFunction_NativeReanimatedModuleSpec_unregisterWorklet};
-  methodMap_["setWorkletListener"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_setWorkletListener};
-
-  methodMap_["registerSharedValue"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_registerSharedValue};
-  methodMap_["unregisterSharedValue"] = MethodMetadata{
-      1, __hostFunction_NativeReanimatedModuleSpec_unregisterSharedValue};
-
-  methodMap_["setSharedValue"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_setSharedValue};
-  methodMap_["getSharedValueAsync"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_getSharedValueAsync};
-
-  methodMap_["registerApplierOnRender"] = MethodMetadata{
-      3, __hostFunction_NativeReanimatedModuleSpec_registerApplierOnRender};
-  methodMap_["unregisterApplierFromRender"] = MethodMetadata{
-      1, __hostFunction_NativeReanimatedModuleSpec_unregisterApplierFromRender};
+  methodMap_["makeShareable"] = MethodMetadata{
+      1, __hostFunction_NativeReanimatedModuleSpec_makeShareable};
+  methodMap_["makeMutable"] = MethodMetadata{
+      1, __hostFunction_NativeReanimatedModuleSpec_makeMutable};
+  methodMap_["makeRemote"] = MethodMetadata{
+      1, __hostFunction_NativeReanimatedModuleSpec_makeRemote};
       
-  methodMap_["registerMapper"] = MethodMetadata{
-       3, __hostFunction_NativeReanimatedModuleSpec_registerMapper};
-  methodMap_["unregisterMapper"] = MethodMetadata{
-       1, __hostFunction_NativeReanimatedModuleSpec_unregisterMapper};
 
-  methodMap_["registerEventApplier"] = MethodMetadata{
-      4, __hostFunction_NativeReanimatedModuleSpec_registerEventApplier};
-  methodMap_["unregisterEventApplier"] = MethodMetadata{
-      1, __hostFunction_NativeReanimatedModuleSpec_unregisterEventApplier};
-    
-  methodMap_["getRegistersState"] = MethodMetadata{
-      2, __hostFunction_NativeReanimatedModuleSpec_getRegistersState};
+  methodMap_["startMapper"] = MethodMetadata{
+    3, __hostFunction_NativeReanimatedModuleSpec_startMapper};
+  methodMap_["stopMapper"] = MethodMetadata{
+    1, __hostFunction_NativeReanimatedModuleSpec_stopMapper};
+
+  methodMap_["registerEventHandler"] = MethodMetadata{
+    2, __hostFunction_NativeReanimatedModuleSpec_registerEventHandler};
+  methodMap_["unregisterEventHandler"] = MethodMetadata{
+    1, __hostFunction_NativeReanimatedModuleSpec_unregisterEventHandler};
 }
 
-} // namespace react
-} // namespace facebook
+}
+
