@@ -183,21 +183,6 @@ function processWorkletFunction(t, fun) {
           '=',
           t.memberExpression(
             privateFunctionId,
-            t.identifier('_mutates'),
-            false
-          ),
-          t.objectExpression(
-            outputVars.map(variable =>
-              t.objectProperty(variable, variable, false, true)
-            )
-          )
-        )
-      ),
-      t.expressionStatement(
-        t.assignmentExpression(
-          '=',
-          t.memberExpression(
-            privateFunctionId,
             t.identifier('asString'),
             false
           ),

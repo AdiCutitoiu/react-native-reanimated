@@ -93,7 +93,7 @@ jsi::Value ShareableValue::getValue(jsi::Runtime &rt) {
 }
 
 jsi::Object ShareableValue::createHost(jsi::Runtime &rt, std::shared_ptr<jsi::HostObject> host) {
-  return jsi::Object::createFromHostObject(rt, std::make_shared<ShareableHostProxyObject>(shared_from_this(), host));
+  return jsi::Object::createFromHostObject(rt, std::make_shared<ShareableHostProxyObject>(std::move(shared_from_this()), host));
 }
 
 jsi::Value ShareableValue::toJSValue(jsi::Runtime &rt) {
@@ -185,7 +185,8 @@ jsi::Value ShareableValue::toJSValue(jsi::Runtime &rt) {
         return jsi::Function::createFromHostFunction(rt, jsi::PropNameID::forAscii(rt, "workletFunction"), 0, clb);
       } else {
         // when run outside of UI thread we enqueue a call on the UI thread
-        auto clb = [module, frozenObject](
+        auto retain_this = shared_from_this();
+        auto clb = [retain_this = std::move(retain_this)](
             jsi::Runtime &rt,
             const jsi::Value &thisValue,
             const jsi::Value *args,
@@ -193,11 +194,13 @@ jsi::Value ShareableValue::toJSValue(jsi::Runtime &rt) {
             ) -> jsi::Value {
           // TODO: we should find thread based on runtime such that we could also call UI methods
           // from RN and not only RN methods from UI
-          module->scheduler->scheduleOnUI([module, frozenObject] {
-            auto jsThis = jsi::Object::createFromHostObject(*module->runtime, frozenObject);
-            auto code = jsThis.getProperty(*module->runtime, "asString").asString(*module->runtime).utf8(*module->runtime);
-            auto fun = function(*module->runtime, code);
-            fun.callWithThis(*module->runtime, jsThis);
+          auto module = retain_this->module;
+          module->scheduler->scheduleOnUI([retain_this] {
+            jsi::Runtime &rt = *retain_this->module->runtime.get();
+            auto jsThis = retain_this->createHost(rt, retain_this->frozenObject);
+            auto code = jsThis.getProperty(rt, "asString").asString(rt).utf8(rt);
+            auto fun = function(rt, code);
+            fun.callWithThis(rt, jsThis);
           });
           return jsi::Value::undefined();
         };

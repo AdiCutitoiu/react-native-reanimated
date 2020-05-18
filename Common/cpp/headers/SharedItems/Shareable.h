@@ -5,6 +5,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <jsi/jsi.h>
+#include "Logger.h"
 
 namespace reanimated {
 
@@ -49,7 +50,7 @@ private:
 
   jsi::Object createHost(jsi::Runtime &rt, std::shared_ptr<jsi::HostObject> host);
 
-  ShareableValue(NativeReanimatedModule *module): module(module) {};
+  ShareableValue(NativeReanimatedModule *module): module(module) {}
   void adapt(jsi::Runtime &rt, const jsi::Value &value, ValueType objectType);
 
 public:
@@ -67,7 +68,7 @@ public:
 
   ShareableHostProxyObject(std::shared_ptr<ShareableValue> shareableValue,
                            std::shared_ptr<jsi::HostObject> host):
-    shareableValue(shareableValue), host(host) {};
+    shareableValue(shareableValue), host(host) { } 
 
   void set(jsi::Runtime &rt, const jsi::PropNameID &name, const jsi::Value &value);
   jsi::Value get(jsi::Runtime &rt, const jsi::PropNameID &name);

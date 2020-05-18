@@ -96,7 +96,7 @@ std::shared_ptr<NativeReanimatedModule> createReanimatedModule(std::shared_ptr<J
   };
 
   std::shared_ptr<Scheduler> scheduler(new IOSScheduler(jsInvoker));
-  std::unique_ptr<jsi::Runtime> animatedRuntime(static_cast<jsi::Runtime*>(facebook::jsc::makeJSCRuntime().release()));
+  std::unique_ptr<jsi::Runtime> animatedRuntime = facebook::jsc::makeJSCRuntime();
 
   std::shared_ptr<NativeReanimatedModule> module(new NativeReanimatedModule(jsInvoker,
                                                                             scheduler,
