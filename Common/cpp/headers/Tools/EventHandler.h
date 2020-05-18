@@ -14,9 +14,9 @@ class EventHandler {
   friend EventHandlerRegistry;
 
 private:
-  jsi::Function handler;
   unsigned long id;
   std::string eventName;
+  jsi::Function handler;
 
 public:
   EventHandler(unsigned long id,

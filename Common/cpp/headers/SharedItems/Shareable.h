@@ -97,7 +97,6 @@ class MutableValue : public jsi::HostObject, std::enable_shared_from_this<Mutabl
 class FrozenObject : public jsi::HostObject {
   private:
   std::unordered_map<std::string, std::shared_ptr<ShareableValue>> map;
-  NativeReanimatedModule *module;
 
   public:
 

@@ -93,7 +93,7 @@ jsi::Value ShareableValue::getValue(jsi::Runtime &rt) {
 }
 
 jsi::Object ShareableValue::createHost(jsi::Runtime &rt, std::shared_ptr<jsi::HostObject> host) {
-  return jsi::Object::createFromHostObject(rt, std::make_shared<ShareableHostProxyObject>(std::move(shared_from_this()), host));
+  return jsi::Object::createFromHostObject(rt, std::make_shared<ShareableHostProxyObject>(shared_from_this(), host));
 }
 
 jsi::Value ShareableValue::toJSValue(jsi::Runtime &rt) {
@@ -285,7 +285,7 @@ void MutableValue::removeListener(unsigned long listenerId) {
   }), listeners.end());
 }
 
-FrozenObject::FrozenObject(jsi::Runtime &rt, const jsi::Object &object, NativeReanimatedModule *module): module(module) {
+FrozenObject::FrozenObject(jsi::Runtime &rt, const jsi::Object &object, NativeReanimatedModule *module) {
   auto propertyNames = object.getPropertyNames(rt);
   for (size_t i = 0, count = propertyNames.size(rt); i < count; i++) {
     auto propertyName = propertyNames.getValueAtIndex(rt, i).asString(rt);

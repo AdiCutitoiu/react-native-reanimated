@@ -1,7 +1,6 @@
 package com.swmansion.reanimated;
 
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 
 import com.facebook.react.bridge.Callback;
@@ -12,24 +11,18 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.module.annotations.ReactModule;
-import com.facebook.react.turbomodule.core.JSCallInvokerHolderImpl;
 import com.facebook.react.uimanager.NativeViewHierarchyManager;
 import com.facebook.react.uimanager.UIBlock;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.UIManagerModuleListener;
-import com.swmansion.reanimated.nodes.SharedValueNode;
 import com.swmansion.reanimated.transitions.TransitionModule;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.Nullable;
-
-import android.util.Pair;
 
 @ReactModule(name = ReanimatedModule.NAME)
 public class ReanimatedModule extends ReactContextBaseJavaModule implements

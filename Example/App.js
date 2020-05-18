@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import {
   Text,
   View,
@@ -21,28 +21,33 @@ const thirdWorklet = () => {
   callback();
 };
 
-function secondWorklet() {
-  'worklet';
-  thirdWorklet();
-}
+function Something() {
+  function secondWorklet() {
+    'worklet';
+    _log('gello');
+  }
 
-function run() {
-  runOnUI(secondWorklet)();
+  function run() {
+    runOnUI(secondWorklet)();
+  }
+  return <Button title="RUN ME" onPress={run} />;
 }
 
 const App = () => {
+  const [show, setShow] = useState(false);
   return (
     <View style={{ alignContent: 'center', justifyContent: 'center', flex: 1 }}>
-      <Button title="Yolo" onPress={run} />
+      <Button title="Yolo" onPress={() => setShow(!show)} />
+      {show && <Something />}
     </View>
   );
 };
 
 // import SzymonStartStop from './testComponents/SzymonStartStopScreen';
 // import DragTest from './testComponents/DragTest';
-import LiquidSwipe from './LiquidSwipe';
+// import LiquidSwipe from './LiquidSwipe';
 
-// export default App;
+export default App;
 // export default DragTest;
-export default LiquidSwipe;
+// export default LiquidSwipe;
 // export default createApp(ExampleApp);

@@ -35,7 +35,6 @@ import com.swmansion.reanimated.nodes.NoopNode;
 import com.swmansion.reanimated.nodes.OperatorNode;
 import com.swmansion.reanimated.nodes.PropsNode;
 import com.swmansion.reanimated.nodes.SetNode;
-import com.swmansion.reanimated.nodes.SharedValueNode;
 import com.swmansion.reanimated.nodes.StyleNode;
 import com.swmansion.reanimated.nodes.TransformNode;
 import com.swmansion.reanimated.nodes.ValueNode;
@@ -289,9 +288,6 @@ public class NodesManager implements EventDispatcherListener {
       node = new FunctionNode(nodeID, config, this);
     } else if ("callfunc".equals(type)) {
       node = new CallFuncNode(nodeID, config, this);
-    } else if ("shared".equals(type)) {
-      Log.v("teraz", "ok");
-      node = new SharedValueNode(nodeID, config, this);
     } else {
       throw new JSApplicationIllegalArgumentException("Unsupported node type: " + type);
     }
@@ -466,9 +462,6 @@ public class NodesManager implements EventDispatcherListener {
     Node node = mAnimatedNodes.get(nodeID);
     if (node instanceof  ValueNode) {
       ((ValueNode) node).setValue(newValue);
-    } else if (node instanceof SharedValueNode) {
-      ((SharedValueNode) node).setValue(newValue);
     }
-
   }
 }

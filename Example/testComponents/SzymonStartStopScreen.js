@@ -1,10 +1,10 @@
 import Animated, {
   useSharedValue,
   useMapper,
-  withTiming as _withTiming,
-  withSpring as _withSpring,
-  delay as _delay,
-  loop as _loop,
+  withTiming,
+  withSpring,
+  delay,
+  loop,
   useAnimatedStyle,
 } from 'react-native-reanimated';
 import { View, Button } from 'react-native';
@@ -31,16 +31,16 @@ export default function RotatingSquare(props) {
   //   };
   // });
 
-  const ss = useSharedValue(20);
+  const width = useSharedValue(20);
 
   // useMapper(() => {
   //   'worklet';
   //   _log('mapper ' + ss.value);
   // }, [ss]);
+
   const style = useAnimatedStyle(() => {
-    'worklet';
     return {
-      width: loop(withTiming(ss.value)),
+      width: loop(withTiming(width.value)),
     };
   });
 

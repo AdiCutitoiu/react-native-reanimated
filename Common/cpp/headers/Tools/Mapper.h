@@ -15,10 +15,10 @@ class MapperRegistry;
 class Mapper {
   friend MapperRegistry;
 private:
+  unsigned long id;
   jsi::Function mapper;
   std::vector<std::shared_ptr<MutableValue>> inputs;
   std::vector<std::shared_ptr<MutableValue>> outputs;
-  unsigned long id;
   bool dirty = true;
 
 public:
