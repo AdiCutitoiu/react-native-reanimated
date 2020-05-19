@@ -7,6 +7,7 @@
 
 #include "NativeProxy.h"
 #include "NativeReanimatedModule.h"
+#include "AndroidScheduler.h"
 #include <android/log.h>
 
 using namespace facebook;
@@ -17,24 +18,25 @@ namespace reanimated {
 NativeProxy::NativeProxy(
   jni::alias_ref<NativeProxy::javaobject> jThis,
   jsi::Runtime* rt,
-  jni::alias_ref<AndroidScheduler::javaobject> scheduler
+  std::shared_ptr<Scheduler> scheduler
 ):
   javaPart_(jni::make_global(jThis)),
   runtime_(rt),
-  scheduler_(jni::make_global(scheduler))
+  scheduler_(scheduler)
   {}
 
 jni::local_ref<NativeProxy::jhybriddata> NativeProxy::initHybrid(
   jni::alias_ref<jhybridobject> jThis,
   jlong jsContext,
-  jni::alias_ref<AndroidScheduler::javaobject> scheduler
+  jni::alias_ref<AndroidScheduler::javaobject> androidScheduler
 ) {
-  return makeCxxInstance(jThis, (jsi::Runtime *)jsContext, nullptr);
+  auto scheduler = androidScheduler->cthis()->getScheduler();
+  return makeCxxInstance(jThis, (jsi::Runtime *)jsContext, scheduler);
 }
 
 void NativeProxy::installJSIBindings() {
 
-  auto propUpdater = [](jsi::Runtime &rt, int viewTag, const jsi::Object &props) -> void {
+  auto propUpdater = [](jsi::Runtime &rt, int viewTag, const jsi::Object &props) {
     //
   };
 
@@ -43,10 +45,9 @@ void NativeProxy::installJSIBindings() {
   };
 
   std::unique_ptr<jsi::Runtime> animatedRuntime = facebook::hermes::makeHermesRuntime();
-  //auto scheduler = std::make_shared<AndroidScheduler>();
 
   auto module = std::make_shared<NativeReanimatedModule>(nullptr,
-                                                         nullptr,
+                                                         scheduler_,
                                                          std::move(animatedRuntime),
                                                          requestRender,
                                                          propUpdater);

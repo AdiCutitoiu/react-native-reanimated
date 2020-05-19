@@ -1,5 +1,4 @@
-#ifndef REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULE_H
-#define REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULE_H
+#pragma once
 
 #include <memory>
 #include <vector>
@@ -67,5 +66,3 @@ class NativeReanimatedModule : public NativeReanimatedModuleSpec {
 };
 
 }
-
-#endif //REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULE_H

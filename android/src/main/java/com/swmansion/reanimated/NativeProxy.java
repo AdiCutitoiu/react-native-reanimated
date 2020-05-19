@@ -22,7 +22,7 @@ public class NativeProxy implements JSIModule, TurboModuleRegistry {
   private final HybridData mHybridData;
 
   public NativeProxy(ReactApplicationContext context) {
-    mHybridData = initHybrid(context.getJavaScriptContextHolder().get(), new Scheduler());
+    mHybridData = initHybrid(context.getJavaScriptContextHolder().get(), new Scheduler(context));
     installJSIBindings();
   }
 

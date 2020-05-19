@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "Scheduler.h"
 #include "AndroidScheduler.h"
 
 namespace reanimated {
@@ -28,14 +29,14 @@ class NativeProxy : public jni::HybridClass<NativeProxy> {
   friend HybridBase;
   jni::global_ref<NativeProxy::javaobject> javaPart_;
   jsi::Runtime *runtime_;
-  jni::global_ref<AndroidScheduler::javaobject> scheduler_;
+  std::shared_ptr<Scheduler> scheduler_;
 
   void installJSIBindings();
 
   explicit NativeProxy(
       jni::alias_ref<NativeProxy::jhybridobject> jThis,
       jsi::Runtime *rt,
-      jni::alias_ref<AndroidScheduler::jhybridobject> scheduler);
+      std::shared_ptr<Scheduler> scheduler);
 };
 
 
