@@ -1,6 +1,5 @@
 
-#ifndef REANIMATEDEXAMPLE_SCHEDULER_H
-#define REANIMATEDEXAMPLE_SCHEDULER_H
+#pragma once
 
 #include <queue>
 #include <thread>
@@ -84,5 +83,3 @@ class Scheduler {
     Queue<std::function<void()>> jsJobs;
 };
 
-
-#endif //REANIMATEDEXAMPLE_SCHEDULER_H

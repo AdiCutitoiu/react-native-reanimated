@@ -1,40 +1,21 @@
 package com.swmansion.reanimated;
 
-import com.facebook.react.TurboReactPackage;
+import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.module.model.ReactModuleInfo;
-import com.facebook.react.module.model.ReactModuleInfoProvider;
+import com.facebook.react.uimanager.ViewManager;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
-public class ReanimatedPackage extends TurboReactPackage {
-
+public class ReanimatedPackage implements ReactPackage {
   @Override
-  public NativeModule getModule(String name, ReactApplicationContext reactContext) {
-    if (name == ReanimatedModule.NAME) {
-      return new ReanimatedModule(reactContext);
-    }
-    return null;
+  public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
+    return Arrays.<NativeModule>asList(new ReanimatedModule(reactContext));
   }
 
   @Override
-  public ReactModuleInfoProvider getReactModuleInfoProvider() {
-    return new ReactModuleInfoProvider() {
-      @Override
-      public Map<String, ReactModuleInfo> getReactModuleInfos() {
-        Map<String, ReactModuleInfo> infos = new LinkedHashMap<>();
-        infos.put(ReanimatedModule.NAME, new ReactModuleInfo(
-                ReanimatedModule.NAME,
-                ReanimatedModule.class.getCanonicalName(),
-                true,
-                true,
-                false,
-                false,
-                true));
-        return infos;
-      }
-    };
+  public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
+    return Arrays.asList();
   }
 }

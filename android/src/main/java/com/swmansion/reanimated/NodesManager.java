@@ -1,7 +1,5 @@
 package com.swmansion.reanimated;
 
-import android.util.Log;
-import android.util.Pair;
 import android.util.SparseArray;
 
 import com.facebook.react.bridge.Callback;
@@ -23,26 +21,25 @@ import com.facebook.react.uimanager.events.EventDispatcherListener;
 import com.swmansion.reanimated.nodes.AlwaysNode;
 import com.swmansion.reanimated.nodes.BezierNode;
 import com.swmansion.reanimated.nodes.BlockNode;
+import com.swmansion.reanimated.nodes.CallFuncNode;
 import com.swmansion.reanimated.nodes.ClockNode;
 import com.swmansion.reanimated.nodes.ClockOpNode;
 import com.swmansion.reanimated.nodes.ConcatNode;
 import com.swmansion.reanimated.nodes.CondNode;
 import com.swmansion.reanimated.nodes.DebugNode;
 import com.swmansion.reanimated.nodes.EventNode;
+import com.swmansion.reanimated.nodes.FunctionNode;
 import com.swmansion.reanimated.nodes.JSCallNode;
 import com.swmansion.reanimated.nodes.Node;
 import com.swmansion.reanimated.nodes.NoopNode;
 import com.swmansion.reanimated.nodes.OperatorNode;
+import com.swmansion.reanimated.nodes.ParamNode;
 import com.swmansion.reanimated.nodes.PropsNode;
 import com.swmansion.reanimated.nodes.SetNode;
 import com.swmansion.reanimated.nodes.StyleNode;
 import com.swmansion.reanimated.nodes.TransformNode;
 import com.swmansion.reanimated.nodes.ValueNode;
-import com.swmansion.reanimated.nodes.ParamNode;
-import com.swmansion.reanimated.nodes.FunctionNode;
-import com.swmansion.reanimated.nodes.CallFuncNode;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -147,10 +144,10 @@ public class NodesManager implements EventDispatcherListener {
     currentFrameTimeMs = frameTimeNanos / 1000000.;
 
     // update shared values
-    ArrayList<Pair<Integer, Object>> dirtyValues = NativeProxy.getChangedSharedValuesAfterRender();
-    for (Pair<Integer, Object> p : dirtyValues) {
-      SharedValueNode.setNewValueFor(p.first, p.second);
-    }
+//    ArrayList<Pair<Integer, Object>> dirtyValues = NativeProxy.getChangedSharedValuesAfterRender();
+//    for (Pair<Integer, Object> p : dirtyValues) {
+//      SharedValueNode.setNewValueFor(p.first, p.second);
+//    }
 
     while (!mEventQueue.isEmpty()) {
       handleEvent(mEventQueue.poll());
@@ -193,17 +190,17 @@ public class NodesManager implements EventDispatcherListener {
     mCallbackPosted.set(false);
     mWantRunUpdates = false;
 
-    if (!mFrameCallbacks.isEmpty() || !mEventQueue.isEmpty() || NativeProxy.shouldRerender()) {
+    if (!mFrameCallbacks.isEmpty() || !mEventQueue.isEmpty()) { // || NativeProxy.shouldRerender()) {
       // enqueue next frame
       startUpdatingOnAnimationFrame();
     }
 
-    String error = NativeProxy.getError();
-    if (error != null) {
-      NativeProxy.handleError();
-      stopUpdatingOnAnimationFrame();
-      throw new RuntimeException(error);
-    }
+//    String error = NativeProxy.getError();
+//    if (error != null) {
+//      NativeProxy.handleError();
+//      stopUpdatingOnAnimationFrame();
+//      throw new RuntimeException(error);
+//    }
   }
 
   /**
@@ -401,17 +398,17 @@ public class NodesManager implements EventDispatcherListener {
   @Override
   public void onEventDispatch(Event event) {
     // first check for event worklet error
-    mReactChoreographer.postFrameCallback(
-            ReactChoreographer.CallbackType.NATIVE_ANIMATED_MODULE,
-            new GuardedFrameCallback(mContext) {
-      @Override
-      protected void doFrameGuarded(long frameTimeNanos) {
-        String error = NativeProxy.getError();
-        if (error != null) {
-          throw new RuntimeException(error);
-        }
-      }
-    });
+//    mReactChoreographer.postFrameCallback(
+//            ReactChoreographer.CallbackType.NATIVE_ANIMATED_MODULE,
+//            new GuardedFrameCallback(mContext) {
+//      @Override
+//      protected void doFrameGuarded(long frameTimeNanos) {
+//        String error = NativeProxy.getError();
+//        if (error != null) {
+//          throw new RuntimeException(error);
+//        }
+//      }
+//    });
     // Events can be dispatched from any thread so we have to make sure handleEvent is run from the
     // UI thread.
     if (UiThreadUtil.isOnUiThread()) {
@@ -428,23 +425,23 @@ public class NodesManager implements EventDispatcherListener {
     int viewTag = event.getViewTag();
     String key = viewTag + eventName;
 
-    try {
-      if (NativeProxy.shouldEventBeHijacked(key.getBytes("utf-8"))) {
-        event.dispatch(NativeProxy.eventHijacker);
-        ArrayList<Pair<Integer, Object>> changedSharedValues = NativeProxy.getChangedSharedValuesAfterEventProxy();
-        for (Pair<Integer, Object> sv : changedSharedValues) {
-          SharedValueNode.setNewValueFor(sv.first, sv.second);
-        }
-
-        if (NativeProxy.shouldRerender()) {
-          postRunUpdatesAfterAnimation();
-        }
-
-        return;
-      }
-    } catch (UnsupportedEncodingException e) {
-      e.printStackTrace();
-    }
+//    try {
+//      if (NativeProxy.shouldEventBeHijacked(key.getBytes("utf-8"))) {
+//        event.dispatch(NativeProxy.eventHijacker);
+//        ArrayList<Pair<Integer, Object>> changedSharedValues = NativeProxy.getChangedSharedValuesAfterEventProxy();
+//        for (Pair<Integer, Object> sv : changedSharedValues) {
+//          SharedValueNode.setNewValueFor(sv.first, sv.second);
+//        }
+//
+//        if (NativeProxy.shouldRerender()) {
+//          postRunUpdatesAfterAnimation();
+//        }
+//
+//        return;
+//      }
+//    } catch (UnsupportedEncodingException e) {
+//      e.printStackTrace();
+//    }
 
     if (!mEventMapping.isEmpty()) {
       EventNode node = mEventMapping.get(key);

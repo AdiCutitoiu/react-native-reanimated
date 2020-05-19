@@ -1,11 +1,10 @@
 import { TurboModuleRegistry } from 'react-native';
 
 const InnerNativeModule =
-  global.NativeReanimated || TurboModuleRegistry.get('NativeReanimated');
+  global.__reanimatedModuleProxy || TurboModuleRegistry.get('NativeReanimated');
 
 export default {
   installCoreFunctions(valueSetter) {
-    // may need to add some more methods in the future
     return InnerNativeModule.installCoreFunctions(valueSetter);
   },
 

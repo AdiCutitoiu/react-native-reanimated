@@ -20,7 +20,6 @@ import com.swmansion.reanimated.transitions.TransitionModule;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 
 import javax.annotation.Nullable;
 
@@ -40,7 +39,6 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
   private @Nullable TransitionModule mTransitionManager;
 
   private UIManagerModule mUIManager;
-  private Handler handler;
 
   public ReanimatedModule(ReactApplicationContext reactContext) {
     super(reactContext);
@@ -55,33 +53,6 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
     mTransitionManager = new TransitionModule(uiManager);
 
     mUIManager = uiManager;
-
-    handler = new Handler(reactCtx.getMainLooper());
-    Scheduler.setContext(reactCtx);
-    Scheduler.setHandler(handler);
-
-    final long runtimePtr = reactCtx.getJavaScriptContextHolder().get();
-
-    final CountDownLatch latch = new CountDownLatch(1);
-
-    handler.post(new Runnable() {
-      @Override
-      public void run() {
-        NativeProxy.install(runtimePtr);
-        latch.countDown();
-      }
-    });
-
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      // noop
-    }
-  }
-
-  @Override
-  public void onCatalystInstanceDestroy() {
-    NativeProxy.clear();
   }
 
   @Override
@@ -263,12 +234,12 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
   @ReactMethod
   public void custom() {
     Log.v("NATIVE_REANIMATED", "custom");
-    mUIManager.addUIBlock(new UIBlock() {
-      @Override
-      public void execute(NativeViewHierarchyManager nativeViewHierarchyManager) {
-        NativeProxy.uiCall();
-      }
-    });
+//    mUIManager.addUIBlock(new UIBlock() {
+//      @Override
+//      public void execute(NativeViewHierarchyManager nativeViewHierarchyManager) {
+//        NativeProxy.uiCall();
+//      }
+//    });
   }
 
   @ReactMethod

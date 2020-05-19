@@ -1,5 +1,4 @@
-#ifndef REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULESPEC_H
-#define REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULESPEC_H
+#pragma once
 
 #include <memory>
 #include <string>
@@ -40,5 +39,3 @@ class JSI_EXPORT NativeReanimatedModuleSpec : public TurboModule {
 };
 
 }
-
-#endif //REANIMATEDEXAMPLE_NATIVEREANIMATEDMODULESPEC_H

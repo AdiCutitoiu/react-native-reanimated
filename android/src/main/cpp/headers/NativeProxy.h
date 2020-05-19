@@ -1,13 +1,13 @@
 #pragma once
 
-//#include <ReactCommon/CallInvokerHolder.h>
-//#include <ReactCommon/JavaTurboModule.h>
 #include <fbjni/fbjni.h>
 #include <jsi/jsi.h>
 #include <react/jni/CxxModuleWrapper.h>
 #include <react/jni/JMessageQueueThread.h>
 #include <memory>
 #include <unordered_map>
+
+#include "AndroidScheduler.h"
 
 namespace reanimated {
 
@@ -18,22 +18,24 @@ class NativeProxy : public jni::HybridClass<NativeProxy> {
   static auto constexpr kJavaDescriptor =
       "Lcom/swmansion/reanimated/NativeProxy;";
   static jni::local_ref<jhybriddata> initHybrid(
-      jni::alias_ref<jhybridobject> jThis,
-      jlong jsContext);
+        jni::alias_ref<jhybridobject> jThis,
+        jlong jsContext,
+        jni::alias_ref<AndroidScheduler::javaobject> scheduler);
   static void registerNatives();
+
 
  private:
   friend HybridBase;
   jni::global_ref<NativeProxy::javaobject> javaPart_;
   jsi::Runtime *runtime_;
-//  std::shared_ptr<CallInvoker> jsCallInvoker_;
-//  std::shared_ptr<CallInvoker> nativeCallInvoker_;
+  jni::global_ref<AndroidScheduler::javaobject> scheduler_;
+
+  void installJSIBindings();
 
   explicit NativeProxy(
       jni::alias_ref<NativeProxy::jhybridobject> jThis,
-      jsi::Runtime *rt);
-      //std::shared_ptr<CallInvoker> jsCallInvoker,
-      //std::shared_ptr<CallInvoker> nativeCallInvoker);
+      jsi::Runtime *rt,
+      jni::alias_ref<AndroidScheduler::jhybridobject> scheduler);
 };
 
 
