@@ -8,7 +8,6 @@
 #include "NativeProxy.h"
 #include "NativeReanimatedModule.h"
 #include "AndroidScheduler.h"
-#include <android/log.h>
 
 using namespace facebook;
 using namespace react;
@@ -36,12 +35,12 @@ jni::local_ref<NativeProxy::jhybriddata> NativeProxy::initHybrid(
 
 void NativeProxy::installJSIBindings() {
 
-  auto propUpdater = [](jsi::Runtime &rt, int viewTag, const jsi::Object &props) {
-    //
+  auto propUpdater = [this](jsi::Runtime &rt, int viewTag, const jsi::Object &props) {
+    this->updateProps(rt, viewTag, props);
   };
 
-  auto requestRender = [](std::function<void(double)> onRender) {
-    //
+  auto requestRender = [this](std::function<void(double)> onRender) {
+    this->requestRender(std::move(onRender));
   };
 
   std::unique_ptr<jsi::Runtime> animatedRuntime = facebook::hermes::makeHermesRuntime();
@@ -56,7 +55,6 @@ void NativeProxy::installJSIBindings() {
     *runtime_,
     jsi::PropNameID::forAscii(*runtime_, "__reanimatedModuleProxy"),
     jsi::Object::createFromHostObject(*runtime_, module));
-  __android_log_print(ANDROID_LOG_ERROR, "Yolo", "PROXY INSTALLED");
 }
 
 void NativeProxy::registerNatives() {
@@ -64,6 +62,59 @@ void NativeProxy::registerNatives() {
     makeNativeMethod("initHybrid", NativeProxy::initHybrid),
     makeNativeMethod("installJSIBindings", NativeProxy::installJSIBindings),
   });
+}
+
+void NativeProxy::requestRender(std::function<void(double)> onRender) {
+  static auto method = javaPart_
+    ->getClass()
+    ->getMethod<void(AnimationFrameCallback::javaobject)>("requestRender");
+  method(javaPart_.get(), AnimationFrameCallback::newObjectCxxArgs(std::move(onRender)).get());
+}
+
+struct PropsMap : jni::JavaClass<PropsMap, JMap<JString,JObject>> {
+  static constexpr auto kJavaDescriptor =
+      "Ljava/util/HashMap;";
+
+  static local_ref<PropsMap> create() {
+    return newInstance();
+  }
+
+  void put(const std::string &key, jni::local_ref<JObject> object) {
+    static auto method = getClass()
+        ->getMethod<jobject(jni::local_ref<JObject>,jni::local_ref<JObject>)>("put");
+    method(self(), jni::make_jstring(key), object);
+  }
+};
+
+static jni::local_ref<PropsMap> ConvertToPropsMap(jsi::Runtime& rt, const jsi::Object &props) {
+  auto map = PropsMap::create();
+
+  auto propNames = props.getPropertyNames(rt);
+  for (size_t i = 0, size = propNames.size(rt); i < size; i++) {
+    auto jsiKey = propNames.getValueAtIndex(rt, i).asString(rt);
+    auto value = props.getProperty(rt, jsiKey);
+    auto key = jsiKey.utf8(rt);
+    if (value.isUndefined() || value.isNull()) {
+      map->put(key, nullptr);
+    } else if (value.isBool()) {
+      map->put(key, jni::autobox(value.getBool()));
+    } else if (value.isNumber()) {
+      map->put(key, jni::autobox(value.asNumber()));
+    } else if (value.isString()) {
+      map->put(key, jni::make_jstring(value.asString(rt).utf8(rt)));
+    } else if (value.isObject()) {
+
+    }
+  }
+
+  return map;
+}
+
+void NativeProxy::updateProps(jsi::Runtime &rt, int viewTag, const jsi::Object &props) {
+  auto method = javaPart_
+    ->getClass()
+    ->getMethod<void(int,JMap<JString,JObject>::javaobject)>("updateProps");
+  method(javaPart_.get(), viewTag, ConvertToPropsMap(rt, props).get());
 }
 
 }

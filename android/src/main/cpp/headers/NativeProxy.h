@@ -14,6 +14,31 @@ namespace reanimated {
 
 using namespace facebook;
 
+class AnimationFrameCallback : public HybridClass<AnimationFrameCallback> {
+ public:
+  static auto constexpr kJavaDescriptor =
+      "Lcom/swmansion/reanimated/NativeProxy$AnimationFrameCallback;";
+
+  void onAnimationFrame(double timestampMs) {
+    callback_(timestampMs);
+  }
+
+  static void registerNatives() {
+    javaClassStatic()->registerNatives({
+        makeNativeMethod("onAnimationFrame", AnimationFrameCallback::onAnimationFrame),
+    });
+  }
+
+ private:
+  friend HybridBase;
+
+  AnimationFrameCallback(std::function<void(double)> callback)
+      : callback_(std::move(callback)) {}
+
+  std::function<void(double)> callback_;
+};
+
+
 class NativeProxy : public jni::HybridClass<NativeProxy> {
  public:
   static auto constexpr kJavaDescriptor =
@@ -32,12 +57,16 @@ class NativeProxy : public jni::HybridClass<NativeProxy> {
   std::shared_ptr<Scheduler> scheduler_;
 
   void installJSIBindings();
+  void requestRender(std::function<void(double)> onRender);
+  void updateProps(jsi::Runtime &rt, int viewTag, const jsi::Object &props);
 
   explicit NativeProxy(
       jni::alias_ref<NativeProxy::jhybridobject> jThis,
       jsi::Runtime *rt,
       std::shared_ptr<Scheduler> scheduler);
 };
+
+
 
 
 }

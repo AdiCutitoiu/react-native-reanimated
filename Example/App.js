@@ -43,11 +43,11 @@ const App = () => {
   );
 };
 
-// import SzymonStartStop from './testComponents/SzymonStartStopScreen';
+import SzymonStartStop from './testComponents/SzymonStartStopScreen';
 // import DragTest from './testComponents/DragTest';
 // import LiquidSwipe from './LiquidSwipe';
 
-export default App;
+export default SzymonStartStop;
 // export default DragTest;
 // export default LiquidSwipe;
 // export default createApp(ExampleApp);

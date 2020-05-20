@@ -97,7 +97,7 @@ public class ReanimatedModule extends ReactContextBaseJavaModule implements
     return NAME;
   }
 
-  private NodesManager getNodesManager() {
+  /*package*/ NodesManager getNodesManager() {
     if (mNodesManager == null) {
       mNodesManager = new NodesManager(getReactApplicationContext());
     }

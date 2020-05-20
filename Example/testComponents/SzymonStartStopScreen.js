@@ -12,13 +12,8 @@ import React, { useState, useRef } from 'react';
 
 const wtf = { a: 1 };
 
-const withTiming = _withTiming;
-const withSpring = _withSpring;
-const delay = _delay;
-const loop = _loop;
-
 export default function RotatingSquare(props) {
-  // const randomWidth = useSharedValue(10);
+  const randomWidth = useSharedValue(10);
   // const randomTranslate = useSharedValue(100);
   // const randomOpacity = useSharedValue(50);
   // const anything = useSharedValue(1);
@@ -31,7 +26,7 @@ export default function RotatingSquare(props) {
   //   };
   // });
 
-  const width = useSharedValue(20);
+  // const width = useSharedValue(20);
 
   // useMapper(() => {
   //   'worklet';
@@ -39,8 +34,9 @@ export default function RotatingSquare(props) {
   // }, [ss]);
 
   const style = useAnimatedStyle(() => {
+    _log('helo');
     return {
-      width: loop(withTiming(width.value)),
+      width: loop(withTiming(randomWidth.value)),
     };
   });
 
@@ -61,9 +57,9 @@ export default function RotatingSquare(props) {
       <Button
         title="toggle"
         onPress={() => {
-          ss.value = Math.random() * 200 + 20;
+          // width.value = Math.random() * 200 + 20;
           // randomTranslate.set(Math.random() * 200);
-          // randomWidth.set(Math.random() * 350);
+          randomWidth.value = Math.random() * 350;
           // anything.set(Math.random());
         }}
       />

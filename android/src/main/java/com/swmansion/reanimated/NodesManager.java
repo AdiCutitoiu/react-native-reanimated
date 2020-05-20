@@ -1,18 +1,25 @@
 package com.swmansion.reanimated;
 
 import android.util.SparseArray;
+import android.view.View;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.GuardedRunnable;
 import com.facebook.react.bridge.JSApplicationIllegalArgumentException;
+import com.facebook.react.bridge.JavaOnlyMap;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.ReadableMapKeySetIterator;
+import com.facebook.react.bridge.ReadableType;
 import com.facebook.react.bridge.UiThreadUtil;
+import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.facebook.react.modules.core.ReactChoreographer;
 import com.facebook.react.uimanager.GuardedFrameCallback;
 import com.facebook.react.uimanager.ReactShadowNode;
+import com.facebook.react.uimanager.ReactStylesDiffMap;
 import com.facebook.react.uimanager.UIImplementation;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.UIManagerReanimatedHelper;
@@ -43,6 +50,7 @@ import com.swmansion.reanimated.nodes.ValueNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +64,7 @@ public class NodesManager implements EventDispatcherListener {
   private static final Double ZERO = Double.valueOf(0);
 
   public interface OnAnimationFrame {
-    void onAnimationFrame();
+    void onAnimationFrame(double timestampMs);
   }
 
   private final SparseArray<Node> mAnimatedNodes = new SparseArray<>();
@@ -157,7 +165,7 @@ public class NodesManager implements EventDispatcherListener {
       List<OnAnimationFrame> frameCallbacks = mFrameCallbacks;
       mFrameCallbacks = new ArrayList<>(frameCallbacks.size());
       for (int i = 0, size = frameCallbacks.size(); i < size; i++) {
-        frameCallbacks.get(i).onAnimationFrame();
+        frameCallbacks.get(i).onAnimationFrame(currentFrameTimeMs);
       }
     }
 
@@ -459,6 +467,70 @@ public class NodesManager implements EventDispatcherListener {
     Node node = mAnimatedNodes.get(nodeID);
     if (node instanceof  ValueNode) {
       ((ValueNode) node).setValue(newValue);
+    }
+  }
+
+  public void updateProps(int viewTag, Map<String, Object> props) {
+    // TODO: update PropsNode to use this method instead of its own way of updating props
+    boolean hasUIProps = false;
+    boolean hasNativeProps = false;
+    boolean hasJSProps = false;
+    JavaOnlyMap newUIProps = new JavaOnlyMap();
+    WritableMap newJSProps = Arguments.createMap();
+    WritableMap newNativeProps = Arguments.createMap();
+
+
+    for (Map.Entry<String, Object> entry : props.entrySet()) {
+      String key = entry.getKey();
+      Object value = entry.getValue();
+      if (uiProps.contains(key)) {
+        hasUIProps = true;
+        addProp(newUIProps, key, value);
+      } else if(nativeProps.contains(key)) {
+        hasNativeProps = true;
+        addProp(newNativeProps, key, value);
+      } else {
+        hasJSProps = true;
+        addProp(newJSProps, key, value);
+      }
+    }
+
+    if (viewTag != View.NO_ID) {
+      if (hasUIProps) {
+        mUIImplementation.synchronouslyUpdateViewOnUIThread(
+                viewTag, new ReactStylesDiffMap(newUIProps));
+      }
+      if (hasNativeProps) {
+        enqueueUpdateViewOnNativeThread(viewTag, newNativeProps);
+      }
+      if (hasJSProps) {
+        WritableMap evt = Arguments.createMap();
+        evt.putInt("viewTag", viewTag);
+        evt.putMap("props", newJSProps);
+        sendEvent("onReanimatedPropsChange", evt);
+      }
+    }
+  }
+
+  private static void addProp(WritableMap propMap, String key, Object value) {
+    if (value == null) {
+      propMap.putNull(key);
+    } else if (value instanceof Double) {
+      propMap.putDouble(key, (Double) value);
+    } else if (value instanceof Integer) {
+      propMap.putInt(key, (Integer) value);
+    } else if (value instanceof Number) {
+      propMap.putDouble(key, ((Number) value).doubleValue());
+    } else if (value instanceof Boolean) {
+      propMap.putBoolean(key, (Boolean) value);
+    } else if (value instanceof String) {
+      propMap.putString(key, (String) value);
+    } else if (value instanceof WritableArray) {
+      propMap.putArray(key, (WritableArray)value);
+    } else if (value instanceof WritableMap) {
+      propMap.putMap(key, (WritableMap)value);
+    } else {
+      throw new IllegalStateException("Unknown type of animated value");
     }
   }
 }

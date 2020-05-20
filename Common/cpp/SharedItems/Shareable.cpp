@@ -31,6 +31,9 @@ void ShareableValue::adapt(jsi::Runtime &rt, const jsi::Value &value, ValueType 
     stringValue = value.asString(rt).utf8(rt);
   } else if (value.isObject()) {
     auto object = value.asObject(rt);
+    auto pn = object.getPropertyNames(rt);
+    //pn.getValueAtIndex(rt, 0).asString(rt).utf8(<#Runtime &runtime#>)
+
     if (object.isFunction(rt)) {
       if (object.getProperty(rt, "__worklet").isUndefined()) {
         // not a worklet, we treat this as a host function

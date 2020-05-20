@@ -8,6 +8,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *) {
   Logger::log("HELLO\n");
   return facebook::jni::initialize(vm, [] {
     reanimated::NativeProxy::registerNatives();
+    reanimated::AnimationFrameCallback::registerNatives();
     reanimated::AndroidScheduler::registerNatives();
   });
 }
